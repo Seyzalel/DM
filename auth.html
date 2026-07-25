@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso - DM Top Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            --glass-bg: rgba(12, 12, 12, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --input-bg: rgba(255, 255, 255, 0.03);
+            --input-border: rgba(255, 255, 255, 0.1);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.02em;
+        }
+        .ambient-glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(160px);
+            z-index: -1;
+            pointer-events: none;
+            animation: pulse-glow 8s infinite alternate;
+        }
+        .glow-1 { top: -10%; left: 10%; width: 50vw; height: 50vw; background: rgba(188, 24, 136, 0.15); }
+        .glow-2 { bottom: -20%; right: -10%; width: 45vw; height: 45vw; background: rgba(220, 39, 67, 0.12); }
+        @keyframes pulse-glow {
+            0% { transform: scale(1); opacity: 0.7; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+        .auth-wrapper {
+            width: 100%;
+            max-width: 440px;
+            padding: 24px;
+            position: relative;
+            z-index: 10;
+            animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fade-in-up {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .auth-wrapper::before {
+            content: "";
+            position: absolute;
+            inset: 20px;
+            border-radius: 34px;
+            background: var(--ig-gradient);
+            z-index: -1;
+            opacity: 0.4;
+            filter: blur(14px);
+        }
+        .auth-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-radius: 32px;
+            padding: 48px 40px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+            transition: height 0.4s ease;
+        }
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--ig-gradient);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 24px rgba(220, 39, 67, 0.3);
+            position: relative;
+        }
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            mix-blend-mode: overlay;
+        }
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+            z-index: 2;
+        }
+        .auth-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .auth-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 32px;
+        }
+        .input-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.4s ease;
+        }
+        .input-group.hidden {
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        .input-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cccccc;
+            margin-left: 4px;
+        }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            width: 18px;
+            height: 18px;
+            fill: #666666;
+            transition: fill 0.3s;
+            pointer-events: none;
+        }
+        .auth-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 16px;
+            padding: 16px 16px 16px 44px;
+            color: white;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .auth-input::placeholder {
+            color: #555555;
+            font-weight: 400;
+        }
+        .auth-input:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
+        }
+        .auth-input:focus + .input-icon,
+        .auth-input:not(:placeholder-shown) + .input-icon {
+            fill: white;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+        .password-toggle svg {
+            width: 18px;
+            height: 18px;
+            fill: #666666;
+            transition: fill 0.2s;
+        }
+        .password-toggle:hover svg {
+            fill: white;
+        }
+        .forgot-password {
+            align-self: flex-end;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: -4px;
+            transition: color 0.2s;
+        }
+        .forgot-password:hover {
+            color: white;
+        }
+        .forgot-password.hidden {
+            display: none;
+        }
+        .api-message {
+            display: none;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 4px;
+            margin-bottom: 4px;
+            font-family: 'Inter', sans-serif;
+        }
+        .api-message.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            animation: shake 0.4s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        .btn-submit {
+            width: 100%;
+            background: var(--ig-gradient);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 24px rgba(220, 39, 67, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(220, 39, 67, 0.4);
+        }
+        .btn-submit:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        .auth-footer {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .auth-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            margin-left: 4px;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            transition: color 0.2s;
+        }
+        .auth-toggle:hover {
+            color: #dc2743;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2.5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+        @media (max-width: 480px) {
+            .auth-wrapper {
+                padding: 16px;
+            }
+            .auth-card {
+                padding: 40px 24px;
+            }
+            .auth-title {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                    </svg>
+                </div>
+                <h1 class="auth-title" id="authTitle">Bem-vindo de volta</h1>
+                <p class="auth-subtitle" id="authSubtitle">Acesse sua conta para continuar</p>
+            </div>
+
+            <form class="auth-form" id="authForm">
+                <div class="input-group hidden" id="usernameGroup">
+                    <label class="input-label">Nome de Usuário</label>
+                    <div class="input-wrapper">
+                        <input type="text" class="auth-input" id="usernameInput" placeholder="ex: @usuario">
+                        <svg class="input-icon" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label" id="emailLabel">E-mail ou Usuário</label>
+                    <div class="input-wrapper">
+                        <input type="text" class="auth-input" id="identifierInput" placeholder="seu@email.com ou @usuario" required>
+                        <svg class="input-icon" viewBox="0 0 24 24">
+                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Senha</label>
+                    <div class="input-wrapper">
+                        <input type="password" class="auth-input" id="passwordInput" placeholder="••••••••" required>
+                        <svg class="input-icon" viewBox="0 0 24 24">
+                            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                        </svg>
+                        <button type="button" class="password-toggle" id="togglePassword" tabindex="-1">
+                            <svg id="eyeIcon" viewBox="0 0 24 24">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <a href="#" class="forgot-password" id="forgotPassword">Esqueceu a senha?</a>
+
+                <div id="apiMessage" class="api-message"></div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">Entrar no sistema</button>
+            </form>
+
+            <div class="auth-footer">
+                <span id="footerText">Ainda não tem uma conta?</span>
+                <button type="button" class="auth-toggle" id="toggleModeBtn">Criar conta</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const authTitle = document.getElementById('authTitle');
+        const authSubtitle = document.getElementById('authSubtitle');
+        const usernameGroup = document.getElementById('usernameGroup');
+        const usernameInput = document.getElementById('usernameInput');
+        const emailLabel = document.getElementById('emailLabel');
+        const identifierInput = document.getElementById('identifierInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const forgotPassword = document.getElementById('forgotPassword');
+        const submitBtn = document.getElementById('submitBtn');
+        const footerText = document.getElementById('footerText');
+        const toggleModeBtn = document.getElementById('toggleModeBtn');
+        const authForm = document.getElementById('authForm');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const apiMessage = document.getElementById('apiMessage');
+
+        let isLoginMode = true;
+
+        const eyeOpenPath = "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z";
+        const eyeClosedPath = "M11.83 9L15 12.16V12a3 3 0 0 0-3-3h-.17zm-4.3.8l1.55 1.55c-.05.21-.08.43-.08.65a3 3 0 0 0 3 3c.22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.3-3.8c4.29 0 7.97 2.47 9.67 6.09-1.07 2.29-2.9 4.14-5.11 5.3l-1.64-1.64C16.51 14.9 18 13.6 19.11 12 17.65 9.07 14.54 7 11.83 7c-.63 0-1.24.11-1.82.3l-1.58-1.58C9.52 5.25 10.63 5 11.83 5zm-9.56-.6L1 5.67l2.81 2.81C2.39 9.53 1.15 10.66.5 12c1.7 3.62 5.38 6.09 9.67 6.09 1.48 0 2.89-.32 4.17-.88l4.4 4.4 1.27-1.27-17.74-17.74zM10.19 13.5l1.83 1.83C11.83 15 11 14.17 10.19 13.5z";
+
+        togglePasswordBtn.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.innerHTML = `<path d="${eyeClosedPath}"/>`;
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.innerHTML = `<path d="${eyeOpenPath}"/>`;
+            }
+        });
+
+        toggleModeBtn.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            apiMessage.className = 'api-message';
+            apiMessage.textContent = '';
+            
+            if (isLoginMode) {
+                authTitle.textContent = 'Bem-vindo de volta';
+                authSubtitle.textContent = 'Acesse sua conta para continuar';
+                usernameGroup.classList.add('hidden');
+                usernameInput.removeAttribute('required');
+                emailLabel.textContent = 'E-mail ou Usuário';
+                identifierInput.placeholder = 'seu@email.com ou @usuario';
+                identifierInput.type = 'text';
+                forgotPassword.classList.remove('hidden');
+                submitBtn.textContent = 'Entrar no sistema';
+                footerText.textContent = 'Ainda não tem uma conta?';
+                toggleModeBtn.textContent = 'Criar conta';
+            } else {
+                authTitle.textContent = 'Crie sua conta';
+                authSubtitle.textContent = 'Inicie o rastreamento em segundos';
+                usernameGroup.classList.remove('hidden');
+                usernameInput.setAttribute('required', 'true');
+                emailLabel.textContent = 'E-mail';
+                identifierInput.placeholder = 'seu@email.com';
+                identifierInput.type = 'email';
+                forgotPassword.classList.add('hidden');
+                submitBtn.textContent = 'Criar conta agora';
+                footerText.textContent = 'Já possui uma conta?';
+                toggleModeBtn.textContent = 'Fazer login';
+            }
+        });
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            apiMessage.className = 'api-message';
+            apiMessage.textContent = '';
+            
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner"></span> Processando...';
+            submitBtn.style.pointerEvents = 'none';
+
+            let endpoint = '';
+            let payload = {};
+
+            if (isLoginMode) {
+                endpoint = '/api/login';
+                payload = {
+                    identifier: identifierInput.value,
+                    password: passwordInput.value
+                };
+            } else {
+                endpoint = '/api/register';
+                payload = {
+                    username: usernameInput.value,
+                    email: identifierInput.value,
+                    password: passwordInput.value
+                };
+            }
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    apiMessage.textContent = data.message;
+                    apiMessage.classList.add('error');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.style.pointerEvents = 'auto';
+                }
+            } catch (error) {
+                apiMessage.textContent = 'Erro de conexão. Tente novamente.';
+                apiMessage.classList.add('error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.style.pointerEvents = 'auto';
+            }
+        });
+    </script>
+</body>
+</html>
