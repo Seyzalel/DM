@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DM Top Monitor | Descubra a Verdade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,13 +23,6 @@
             padding: 0;
             box-sizing: border-box;
         }
-        html, body {
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
-            margin: 0;
-            padding: 0;
-        }
         html {
             scroll-behavior: smooth;
         }
@@ -37,9 +30,9 @@
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
+            overflow-x: hidden;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
-            position: relative;
         }
         h1, h2, h3, h4 {
             font-family: 'Outfit', sans-serif;
@@ -141,7 +134,6 @@
             gap: 40px;
             max-width: 1400px;
             margin: 0 auto;
-            width: 100%;
         }
         .hero-content {
             flex: 1;
@@ -178,7 +170,7 @@
             border: none;
             padding: 0 24px;
             color: white;
-            font-size: 16px; /* Fix for iOS auto-zoom */
+            font-size: 1rem;
             outline: none;
         }
         .hero-input-group input::placeholder {
@@ -197,7 +189,6 @@
             flex: 1;
             position: relative;
             perspective: 1200px;
-            width: 100%;
         }
         .app-mockup {
             width: 100%;
@@ -223,7 +214,6 @@
             width: 44px; height: 44px; border-radius: 50%;
             background: linear-gradient(135deg, #333, #111);
             border: 1px solid rgba(255,255,255,0.1);
-            flex-shrink: 0;
         }
         .mockup-skeleton-title { width: 130px; height: 12px; background: rgba(255,255,255,0.15); border-radius: 4px; margin-bottom: 8px; }
         .mockup-skeleton-sub { width: 90px; height: 10px; background: rgba(255,255,255,0.08); border-radius: 4px; }
@@ -236,7 +226,6 @@
             font-size: 0.7rem;
             color: #dc2743;
             font-weight: 700;
-            white-space: nowrap;
         }
         .mockup-list { display: flex; flex-direction: column; gap: 14px; }
         .mockup-item {
@@ -256,7 +245,6 @@
             padding: 120px 5%;
             max-width: 1200px;
             margin: 0 auto;
-            width: 100%;
         }
         .section-title {
             text-align: center;
@@ -273,7 +261,7 @@
         }
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 32px;
         }
         .feature-card {
@@ -303,7 +291,6 @@
             padding: 140px 5%;
             background: linear-gradient(180deg, var(--bg-dark) 0%, #050505 100%);
             border-top: 1px solid var(--border-color);
-            width: 100%;
         }
         .steps-container {
             max-width: 1000px;
@@ -316,7 +303,6 @@
             display: flex;
             align-items: center;
             gap: 60px;
-            position: relative;
         }
         .step-row:nth-child(even) { flex-direction: row-reverse; }
         .step-number {
@@ -337,11 +323,10 @@
             background: rgba(255,255,255,0.01);
             border: 1px solid var(--border-color);
             border-radius: 32px;
-            min-height: 300px;
+            height: 300px;
             display: flex; align-items: center; justify-content: center;
             position: relative;
             overflow: hidden;
-            width: 100%;
         }
         .step-img::before {
             content: '';
@@ -354,7 +339,6 @@
             text-align: center;
             max-width: 800px;
             margin: 0 auto;
-            width: 100%;
         }
         .cta-section h2 {
             font-size: 3.5rem;
@@ -371,41 +355,24 @@
             text-align: center;
             color: #555555;
             font-size: 0.9rem;
-            width: 100%;
         }
         .footer-logo {
             display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 24px;
         }
-        
-        /* Sistema de Reveal (Animações) */
         .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
         .reveal.active { opacity: 1; transform: translateY(0); }
-
-        /* Responsividade Mobile */
         @media (max-width: 900px) {
-            .hero { flex-direction: column; text-align: center; padding-top: 140px; padding-bottom: 60px; }
+            .hero { flex-direction: column; text-align: center; padding-top: 160px; }
             .hero h1 { font-size: 3.2rem; }
-            .hero-content { display: flex; flex-direction: column; align-items: center; width: 100%; }
-            .hero-input-group { width: 100%; flex-direction: column; background: transparent; border: none; gap: 12px; padding: 0; }
-            .hero-input-group input { border: 1px solid var(--border-color); border-radius: 100px; padding: 18px; text-align: center; font-size: 16px !important; width: 100%; }
+            .hero-content { display: flex; flex-direction: column; align-items: center; }
+            .hero-input-group { width: 100%; flex-direction: column; background: transparent; border: none; gap: 12px; }
+            .hero-input-group input { border: 1px solid var(--border-color); border-radius: 100px; padding: 18px; text-align: center; }
             .hero-input-group button { width: 100%; }
             .nav-links { display: none; }
-            .step-row, .step-row:nth-child(even) { flex-direction: column; text-align: left; gap: 30px; }
-            
-            /* Ajustes cruciais de visibilidade no mobile */
-            .hero-visual { width: 100%; margin-top: 20px; }
-            .app-mockup { transform: rotateY(0) rotateX(0) !important; margin: 0 auto; width: 100%; max-width: 100%; padding: 20px; }
+            .step-row, .step-row:nth-child(even) { flex-direction: column; text-align: left; }
+            .app-mockup { transform: rotateY(0) rotateX(0); margin: 0 auto; }
             .section-title, .cta-section h2 { font-size: 2.5rem; }
-            
-            /* Correção do número vazando a tela */
-            .step-number { top: -20px; left: 0; font-size: 5rem; position: relative; display: block; margin-bottom: -30px; }
-            .step-text { padding-left: 0; width: 100%; }
-            
-            /* Correção da imagem vazando a tela */
-            .step-img { width: 100%; min-height: 250px; padding: 20px; }
-            .step-img > div { width: 100% !important; }
-            .mockup-header { flex-wrap: wrap; }
-            .mockup-badge { margin-left: 0; margin-top: 10px; }
+            .step-text { padding-left: 20px; }
         }
     </style>
 </head>
@@ -413,7 +380,6 @@
     <div class="ambient-glow glow-1"></div>
     <div class="ambient-glow glow-2"></div>
     <div class="ambient-glow glow-3"></div>
-    
     <div class="navbar-container">
         <header class="navbar" id="navbar">
             <a href="#" class="logo">
@@ -429,10 +395,8 @@
             <button class="btn-primary" onclick="window.location.href='/auth'" style="padding: 10px 24px; font-size: 0.85rem;">Acessar Painel</button>
         </header>
     </div>
-
     <section class="hero">
-        <!-- Adicionado "active" direto no HTML para carregar instantaneamente no Safari sem depender do JS -->
-        <div class="hero-content reveal active">
+        <div class="hero-content reveal">
             <h1>Descubra com quem ela(e) mais conversa.</h1>
             <p>A intuição raramente erra. Acabe com as dúvidas e descubra em segundos quem domina o topo do Direct do seu parceiro ou daquele crush. Invisível, rápido e sem deixar rastros.</p>
             <div class="hero-input-group">
@@ -444,9 +408,7 @@
                 Conexão anônima. O dono do perfil não recebe notificações.
             </div>
         </div>
-        
-        <!-- Adicionado "active" direto no HTML para carregar instantaneamente -->
-        <div class="hero-visual reveal active">
+        <div class="hero-visual reveal">
             <div class="app-mockup">
                 <div class="mockup-header">
                     <div class="mockup-avatar"></div>
@@ -488,7 +450,6 @@
             </div>
         </div>
     </section>
-
     <section class="features" id="tecnologia">
         <h2 class="section-title reveal">A verdade não deixa rastros.</h2>
         <p class="section-subtitle reveal">Nosso sistema cruza metadados de interação entre contas, revelando a lista exata de quem troca mais mensagens, sem que ninguém saiba o que você está fazendo.</p>
@@ -516,7 +477,6 @@
             </div>
         </div>
     </section>
-
     <section class="steps" id="funcionamento">
         <div class="steps-container">
             <h2 class="section-title reveal" style="margin-bottom: 30px;">Como descobrir hoje.</h2>
@@ -527,8 +487,8 @@
                     <p>Basta digitar o @ do usuário da pessoa. Se o perfil for público ou você já tiver acesso a ele na sua rede, nosso sistema conecta instantaneamente.</p>
                 </div>
                 <div class="step-img">
-                    <div style="background: rgba(0,0,0,0.4); padding: 16px 24px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; width: 80%; backdrop-filter: blur(10px); box-sizing: border-box;">
-                        <span style="color: #666; font-size: 1rem;">@</span><span style="color: white; border-right: 2px solid white; padding-right: 4px; animation: blink 1s infinite; word-break: break-all;">nome_da_pessoa</span>
+                    <div style="background: rgba(0,0,0,0.4); padding: 16px 24px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; width: 80%; backdrop-filter: blur(10px);">
+                        <span style="color: #666; font-size: 1rem;">@</span><span style="color: white; border-right: 2px solid white; padding-right: 4px; animation: blink 1s infinite;">nome_da_pessoa</span>
                     </div>
                 </div>
             </div>
@@ -552,15 +512,15 @@
                     <p>Veja o ranking final. Fatos, sem achismos. Saiba exatamente quem é a prioridade número 1 e quem completa o top 30.</p>
                 </div>
                 <div class="step-img">
-                    <div style="display: flex; flex-direction: column; gap: 12px; width: 80%; box-sizing: border-box;">
+                    <div style="display: flex; flex-direction: column; gap: 12px; width: 70%;">
                         <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 16px; border: 1px solid rgba(255,255,255,0.1);">
                             <div style="font-weight: 800; color: #dc2743; font-size: 1.2rem;">#1</div>
-                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.9); border-radius: 50%; flex-shrink: 0;"></div>
+                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.9); border-radius: 50%;"></div>
                             <div style="flex: 1; height: 10px; background: rgba(255,255,255,0.2); border-radius: 4px;"></div>
                         </div>
                         <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 16px;">
                             <div style="font-weight: 800; color: #555; font-size: 1.2rem;">#2</div>
-                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 50%; flex-shrink: 0;"></div>
+                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
                             <div style="flex: 1; height: 10px; background: rgba(255,255,255,0.05); border-radius: 4px;"></div>
                         </div>
                     </div>
@@ -568,13 +528,11 @@
             </div>
         </div>
     </section>
-
     <section class="cta-section reveal">
         <h2>Chega de noites sem dormir.</h2>
         <p>Tome o controle da situação hoje. Descubra de uma vez por todas com quem a pessoa que você gosta passa horas conversando no celular. Acesso restrito liberado após autenticação.</p>
         <button class="btn-primary" onclick="window.location.href='/auth'" style="padding: 18px 40px; font-size: 1.1rem;">Acessar o Painel Agora</button>
     </section>
-
     <footer>
         <div class="footer-logo">
             <div class="logo-icon" style="width: 20px; height: 20px; border-radius: 6px;">
@@ -588,7 +546,6 @@
             <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 0.8rem; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'">Privacidade</a>
         </div>
     </footer>
-
     <script>
         const navbar = document.getElementById('navbar');
         window.addEventListener('scroll', () => {
@@ -598,14 +555,11 @@
                 navbar.classList.remove('scrolled');
             }
         });
-
-        // Otimização do Observer para funcionar melhor no mobile e Safari
-        const revealElements = document.querySelectorAll('.reveal:not(.active)');
+        const revealElements = document.querySelectorAll('.reveal');
         const revealOptions = {
-            threshold: 0.05, // Reduzido para garantir que elementos grandes ativem no mobile
-            rootMargin: "0px 0px -20px 0px"
+            threshold: 0.15,
+            rootMargin: "0px 0px -40px 0px"
         };
-        
         const revealOnScroll = new IntersectionObserver(function(entries, observer) {
             entries.forEach(entry => {
                 if (!entry.isIntersecting) {
@@ -615,16 +569,13 @@
                 observer.unobserve(entry.target);
             });
         }, revealOptions);
-        
         revealElements.forEach(el => {
             revealOnScroll.observe(el);
         });
-        
-        // Fallback de segurança robusto para garantir exibição imediata
         setTimeout(() => {
             document.querySelectorAll('.reveal').forEach(el => {
                 const rect = el.getBoundingClientRect();
-                if(rect.top < window.innerHeight + 100) {
+                if(rect.top < window.innerHeight) {
                     el.classList.add('active');
                 }
             });
