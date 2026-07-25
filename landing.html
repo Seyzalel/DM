@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DM Top Monitor | Descubra a Verdade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --bg-card: rgba(255, 255, 255, 0.02);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            --accent: #dc2743;
+            --glass-blur: blur(30px);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+        .ambient-glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(160px);
+            z-index: -1;
+            pointer-events: none;
+        }
+        .glow-1 { top: -10%; left: 0; width: 45vw; height: 45vw; background: rgba(188, 24, 136, 0.12); }
+        .glow-2 { top: 40%; right: -10%; width: 50vw; height: 50vw; background: rgba(220, 39, 67, 0.08); }
+        .glow-3 { bottom: -10%; left: 10%; width: 40vw; height: 40vw; background: rgba(240, 148, 51, 0.08); }
+        .navbar-container {
+            position: fixed;
+            top: 24px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            z-index: 1000;
+            padding: 0 20px;
+        }
+        header.navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(20, 20, 20, 0.4);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 100px;
+            padding: 12px 24px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        header.navbar.scrolled {
+            background: rgba(10, 10, 10, 0.65);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            max-width: 850px;
+        }
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            text-decoration: none;
+        }
+        .logo-icon {
+            width: 28px; height: 28px;
+            background: var(--ig-gradient);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-icon svg { width: 16px; fill: white; }
+        .nav-links {
+            display: flex; gap: 32px;
+        }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: white; }
+        .btn-primary {
+            background: var(--ig-gradient);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 100px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(220, 39, 67, 0.4);
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 140px 5% 80px;
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .hero-content {
+            flex: 1;
+            max-width: 620px;
+            z-index: 10;
+        }
+        .hero h1 {
+            font-size: 4.8rem;
+            letter-spacing: -0.04em;
+            margin-bottom: 24px;
+            color: white;
+        }
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 540px;
+        }
+        .hero-input-group {
+            display: flex;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            padding: 8px;
+            backdrop-filter: blur(20px);
+            transition: border-color 0.3s;
+        }
+        .hero-input-group:focus-within {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .hero-input-group input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0 24px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        .hero-input-group input::placeholder {
+            color: #666666;
+        }
+        .security-note {
+            font-size: 0.8rem;
+            color: #555555;
+            margin-top: 16px;
+            margin-left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .hero-visual {
+            flex: 1;
+            position: relative;
+            perspective: 1200px;
+        }
+        .app-mockup {
+            width: 100%;
+            max-width: 460px;
+            background: rgba(12, 12, 12, 0.6);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 32px;
+            padding: 28px;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+            transform: rotateY(-12deg) rotateX(8deg);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-left: auto;
+        }
+        .hero-visual:hover .app-mockup {
+            transform: rotateY(-4deg) rotateX(4deg) translateY(-12px);
+        }
+        .mockup-header {
+            display: flex; gap: 14px; align-items: center; margin-bottom: 28px;
+        }
+        .mockup-avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: linear-gradient(135deg, #333, #111);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .mockup-skeleton-title { width: 130px; height: 12px; background: rgba(255,255,255,0.15); border-radius: 4px; margin-bottom: 8px; }
+        .mockup-skeleton-sub { width: 90px; height: 10px; background: rgba(255,255,255,0.08); border-radius: 4px; }
+        .mockup-badge {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: rgba(220, 39, 67, 0.1);
+            border: 1px solid rgba(220, 39, 67, 0.3);
+            border-radius: 100px;
+            font-size: 0.7rem;
+            color: #dc2743;
+            font-weight: 700;
+        }
+        .mockup-list { display: flex; flex-direction: column; gap: 14px; }
+        .mockup-item {
+            display: flex; align-items: center; gap: 14px; padding: 14px;
+            background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid rgba(255,255,255,0.04);
+            position: relative; overflow: hidden;
+        }
+        .mockup-item::after {
+            content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+            transform: translateX(-100%); animation: shimmer 2.5s infinite;
+        }
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
+        .mockup-name { font-size: 0.9rem; font-weight: 600; color: white; margin-bottom: 3px; }
+        .mockup-msg { font-size: 0.75rem; color: #777777; }
+        .mockup-rank { margin-left: auto; font-weight: 700; color: #444444; font-size: 0.9rem; }
+        .features {
+            padding: 120px 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-title {
+            text-align: center;
+            font-size: 3.5rem;
+            margin-bottom: 24px;
+        }
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 80px;
+            font-size: 1.15rem;
+            max-width: 640px;
+            margin-left: auto; margin-right: auto;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 32px;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 48px 32px;
+            border-radius: 32px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .feature-card:hover {
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-8px);
+            background: rgba(255,255,255,0.04);
+        }
+        .feature-icon {
+            width: 56px; height: 56px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .feature-icon svg { width: 24px; fill: white; }
+        .feature-card h3 { font-size: 1.4rem; margin-bottom: 14px; }
+        .feature-card p { color: var(--text-muted); font-size: 1rem; }
+        .steps {
+            padding: 140px 5%;
+            background: linear-gradient(180deg, var(--bg-dark) 0%, #050505 100%);
+            border-top: 1px solid var(--border-color);
+        }
+        .steps-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 80px;
+        }
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: 60px;
+        }
+        .step-row:nth-child(even) { flex-direction: row-reverse; }
+        .step-number {
+            font-size: 8rem;
+            font-weight: 800;
+            color: rgba(255,255,255,0.02);
+            line-height: 0.8;
+            position: absolute;
+            z-index: 0;
+            top: -30px; left: -30px;
+            font-family: 'Outfit';
+        }
+        .step-text { flex: 1; position: relative; z-index: 1; }
+        .step-text h3 { font-size: 2.2rem; margin-bottom: 18px; color: white; }
+        .step-text p { color: var(--text-muted); font-size: 1.1rem; }
+        .step-img {
+            flex: 1;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid var(--border-color);
+            border-radius: 32px;
+            height: 300px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .step-img::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 70%);
+        }
+        .cta-section {
+            padding: 140px 5%;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .cta-section h2 {
+            font-size: 3.5rem;
+            margin-bottom: 24px;
+        }
+        .cta-section p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 48px;
+        }
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 60px 5%;
+            text-align: center;
+            color: #555555;
+            font-size: 0.9rem;
+        }
+        .footer-logo {
+            display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 24px;
+        }
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        @media (max-width: 900px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 160px; }
+            .hero h1 { font-size: 3.2rem; }
+            .hero-content { display: flex; flex-direction: column; align-items: center; }
+            .hero-input-group { width: 100%; flex-direction: column; background: transparent; border: none; gap: 12px; }
+            .hero-input-group input { border: 1px solid var(--border-color); border-radius: 100px; padding: 18px; text-align: center; }
+            .hero-input-group button { width: 100%; }
+            .nav-links { display: none; }
+            .step-row, .step-row:nth-child(even) { flex-direction: column; text-align: left; }
+            .app-mockup { transform: rotateY(0) rotateX(0); margin: 0 auto; }
+            .section-title, .cta-section h2 { font-size: 2.5rem; }
+            .step-text { padding-left: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+    <div class="navbar-container">
+        <header class="navbar" id="navbar">
+            <a href="#" class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                </div>
+                DM Monitor
+            </a>
+            <nav class="nav-links">
+                <a href="#tecnologia">Tecnologia</a>
+                <a href="#funcionamento">Funcionamento</a>
+            </nav>
+            <button class="btn-primary" onclick="window.location.href='/auth'" style="padding: 10px 24px; font-size: 0.85rem;">Acessar Painel</button>
+        </header>
+    </div>
+    <section class="hero">
+        <div class="hero-content reveal">
+            <h1>Descubra com quem ela(e) mais conversa.</h1>
+            <p>A intuição raramente erra. Acabe com as dúvidas e descubra em segundos quem domina o topo do Direct do seu parceiro ou daquele crush. Invisível, rápido e sem deixar rastros.</p>
+            <div class="hero-input-group">
+                <input type="text" placeholder="@username do perfil alvo..." spellcheck="false">
+                <button class="btn-primary" onclick="window.location.href='/login'">Espionar Perfil</button>
+            </div>
+            <div class="security-note">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Conexão anônima. O dono do perfil não recebe notificações.
+            </div>
+        </div>
+        <div class="hero-visual reveal">
+            <div class="app-mockup">
+                <div class="mockup-header">
+                    <div class="mockup-avatar"></div>
+                    <div>
+                        <div class="mockup-skeleton-title"></div>
+                        <div class="mockup-skeleton-sub"></div>
+                    </div>
+                    <div class="mockup-badge">Top Interações</div>
+                </div>
+                <div class="mockup-list">
+                    <div class="mockup-item">
+                        <div class="mockup-avatar" style="background: #E57399; width: 36px; height: 36px;"></div>
+                        <div>
+                            <div class="mockup-name">@sofia.martins</div>
+                            <div class="mockup-msg">Visualizado há 5m</div>
+                        </div>
+                        <div class="mockup-rank">#1</div>
+                    </div>
+                    <div class="mockup-item">
+                        <div class="mockup-avatar" style="background: #64B5F6; width: 36px; height: 36px;"></div>
+                        <div>
+                            <div class="mockup-name">@lucas_oliveira</div>
+                            <div class="mockup-msg">Mensagem enviada...</div>
+                        </div>
+                        <div class="mockup-rank">#2</div>
+                    </div>
+                    <div class="mockup-item">
+                        <div class="mockup-avatar" style="background: #81C784; width: 36px; height: 36px;"></div>
+                        <div>
+                            <div class="mockup-name">@ana.beatriz</div>
+                            <div class="mockup-msg">Áudio (0:15)</div>
+                        </div>
+                        <div class="mockup-rank">#3</div>
+                    </div>
+                </div>
+                <div style="margin-top: 24px;">
+                    <button class="btn-primary" onclick="window.location.href='/login'" style="width: 100%; font-size: 0.9rem; padding: 14px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1);">Desbloquear Top 30</button>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="features" id="tecnologia">
+        <h2 class="section-title reveal">A verdade não deixa rastros.</h2>
+        <p class="section-subtitle reveal">Nosso sistema cruza metadados de interação entre contas, revelando a lista exata de quem troca mais mensagens, sem que ninguém saiba o que você está fazendo.</p>
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                </div>
+                <h3>Invisibilidade Absoluta</h3>
+                <p>Você navega como um fantasma. Zero notificações, zero suspeitas. O alvo não faz ideia de que o perfil está sendo analisado neste momento.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                </div>
+                <h3>Sem Pedir Senhas</h3>
+                <p>Esqueça métodos arriscados que bloqueiam a conta. Nós só precisamos do nome de usuário para iniciar a varredura externa de dados.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                </div>
+                <h3>Resposta em Segundos</h3>
+                <p>Assim que você inicia a busca, nosso algoritmo processa as interações e entrega o ranking estruturado diretamente na sua tela.</p>
+            </div>
+        </div>
+    </section>
+    <section class="steps" id="funcionamento">
+        <div class="steps-container">
+            <h2 class="section-title reveal" style="margin-bottom: 30px;">Como descobrir hoje.</h2>
+            <div class="step-row reveal">
+                <div class="step-text">
+                    <div class="step-number">01</div>
+                    <h3>Insira o perfil</h3>
+                    <p>Basta digitar o @ do usuário da pessoa. Se o perfil for público ou você já tiver acesso a ele na sua rede, nosso sistema conecta instantaneamente.</p>
+                </div>
+                <div class="step-img">
+                    <div style="background: rgba(0,0,0,0.4); padding: 16px 24px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; width: 80%; backdrop-filter: blur(10px);">
+                        <span style="color: #666; font-size: 1rem;">@</span><span style="color: white; border-right: 2px solid white; padding-right: 4px; animation: blink 1s infinite;">nome_da_pessoa</span>
+                    </div>
+                </div>
+            </div>
+            <div class="step-row reveal">
+                <div class="step-text">
+                    <div class="step-number">02</div>
+                    <h3>Inicie a Varredura</h3>
+                    <p>Ao confirmar, cruzamos padrões de engajamento, curtidas ocultas, menções e horários de conexão para montar o nível de prioridade no Direct.</p>
+                </div>
+                <div class="step-img">
+                    <div style="width: 120px; height: 120px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; position: relative;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--ig-gradient); filter: blur(20px); opacity: 0.5; position: absolute;"></div>
+                        <svg viewBox="0 0 24 24" style="width: 40px; fill: white; z-index: 2;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="step-row reveal">
+                <div class="step-text">
+                    <div class="step-number">03</div>
+                    <h3>Acesse o Topo da DM</h3>
+                    <p>Veja o ranking final. Fatos, sem achismos. Saiba exatamente quem é a prioridade número 1 e quem completa o top 30.</p>
+                </div>
+                <div class="step-img">
+                    <div style="display: flex; flex-direction: column; gap: 12px; width: 70%;">
+                        <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 16px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-weight: 800; color: #dc2743; font-size: 1.2rem;">#1</div>
+                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.9); border-radius: 50%;"></div>
+                            <div style="flex: 1; height: 10px; background: rgba(255,255,255,0.2); border-radius: 4px;"></div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 16px;">
+                            <div style="font-weight: 800; color: #555; font-size: 1.2rem;">#2</div>
+                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+                            <div style="flex: 1; height: 10px; background: rgba(255,255,255,0.05); border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="cta-section reveal">
+        <h2>Chega de noites sem dormir.</h2>
+        <p>Tome o controle da situação hoje. Descubra de uma vez por todas com quem a pessoa que você gosta passa horas conversando no celular. Acesso restrito liberado após autenticação.</p>
+        <button class="btn-primary" onclick="window.location.href='/login'" style="padding: 18px 40px; font-size: 1.1rem;">Acessar o Painel Agora</button>
+    </section>
+    <footer>
+        <div class="footer-logo">
+            <div class="logo-icon" style="width: 20px; height: 20px; border-radius: 6px;">
+                <svg viewBox="0 0 24 24" style="width: 12px;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+            </div>
+            <strong style="color: white; font-family: 'Outfit'; letter-spacing: -0.02em;">DM Monitor</strong>
+        </div>
+        <p>&copy; 2026 DM Monitor. Todos os direitos reservados. Sem vínculos diretos com aplicativos terceiros.</p>
+        <div style="margin-top: 16px; display: flex; justify-content: center; gap: 24px;">
+            <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 0.8rem; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'">Termos</a>
+            <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 0.8rem; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'">Privacidade</a>
+        </div>
+    </footer>
+    <script>
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 40) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealOptions = {
+            threshold: 0.15,
+            rootMargin: "0px 0px -40px 0px"
+        };
+        const revealOnScroll = new IntersectionObserver(function(entries, observer) {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) {
+                    return;
+                }
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            });
+        }, revealOptions);
+        revealElements.forEach(el => {
+            revealOnScroll.observe(el);
+        });
+        setTimeout(() => {
+            document.querySelectorAll('.reveal').forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if(rect.top < window.innerHeight) {
+                    el.classList.add('active');
+                }
+            });
+        }, 50);
+    </script>
+</body>
+</html>
