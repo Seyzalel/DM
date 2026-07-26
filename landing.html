@@ -2,385 +2,653 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DM Top Monitor | Descubra a Verdade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DM Monitor | A Verdade Sobre o Direct</title>
+    
+    <!-- Pré-carregamento de Fontes para Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
+        /* ==========================================================================
+           1. VARIÁVEIS E CONFIGURAÇÕES GERAIS
+           ========================================================================== */
         :root {
-            --bg-dark: #000000;
-            --bg-card: rgba(255, 255, 255, 0.02);
-            --border-color: rgba(255, 255, 255, 0.06);
+            --bg-dark: #030303;
+            --bg-surface: #0a0a0a;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
             --text-main: #ffffff;
-            --text-muted: #888888;
+            --text-muted: #8e8e93;
             --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-            --accent: #dc2743;
-            --glass-blur: blur(30px);
+            --ig-gradient-hover: linear-gradient(45deg, #f7a754 0%, #ec7e58 25%, #e63853 50%, #d83474 75%, #ca2b98 100%);
+            --accent-red: #ff3b30;
+            --accent-green: #34c759;
+            --blur-heavy: blur(40px);
+            --transition-smooth: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
+
         html {
             scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
         }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
             overflow-x: hidden;
-            line-height: 1.6;
+            line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            width: 100%;
+            position: relative;
         }
-        h1, h2, h3, h4 {
+
+        h1, h2, h3, h4, h5 {
             font-family: 'Outfit', sans-serif;
             line-height: 1.1;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
         }
-        .ambient-glow {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(160px);
+
+        /* Contêiner Mestre - Impede bugs de zoom e centraliza em UltraWides */
+        .master-container {
+            width: 100%;
+            max-width: 100vw;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .section-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 5%;
+            margin: 0 auto;
+        }
+
+        /* ==========================================================================
+           2. EFEITOS DE AMBIENTE (BACKGROUND GLOW)
+           ========================================================================== */
+        .ambient-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             z-index: -1;
             pointer-events: none;
+            overflow: hidden;
         }
-        .glow-1 { top: -10%; left: 0; width: 45vw; height: 45vw; background: rgba(188, 24, 136, 0.12); }
-        .glow-2 { top: 40%; right: -10%; width: 50vw; height: 50vw; background: rgba(220, 39, 67, 0.08); }
-        .glow-3 { bottom: -10%; left: 10%; width: 40vw; height: 40vw; background: rgba(240, 148, 51, 0.08); }
-        .navbar-container {
+
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.4;
+            animation: floatOrb 20s ease-in-out infinite alternate;
+        }
+
+        .glow-1 { top: -10%; left: -5%; width: 50vw; height: 50vw; background: rgba(188, 24, 136, 0.15); }
+        .glow-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: rgba(220, 39, 67, 0.12); }
+        .glow-3 { top: 40%; left: 30%; width: 40vw; height: 40vw; background: rgba(240, 148, 51, 0.08); }
+
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(5%, 5%) scale(1.1); }
+            100% { transform: translate(-5%, -5%) scale(0.9); }
+        }
+
+        /* ==========================================================================
+           3. NAVEGAÇÃO SUPERIOR
+           ========================================================================== */
+        .navbar-wrapper {
             position: fixed;
             top: 24px;
             left: 0;
             width: 100%;
             display: flex;
             justify-content: center;
-            z-index: 1000;
-            padding: 0 20px;
+            z-index: 9999;
+            padding: 0 24px;
+            pointer-events: none; /* Permite clicar através onde não há nav */
         }
-        header.navbar {
+
+        .navbar {
+            pointer-events: auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(20, 20, 20, 0.4);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 15, 15, 0.6);
+            backdrop-filter: var(--blur-heavy);
+            -webkit-backdrop-filter: var(--blur-heavy);
+            border: 1px solid var(--glass-border);
             border-radius: 100px;
-            padding: 12px 24px;
+            padding: 10px 10px 10px 24px;
             width: 100%;
-            max-width: 900px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 800px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: var(--transition-smooth);
         }
-        header.navbar.scrolled {
-            background: rgba(10, 10, 10, 0.65);
-            border-color: rgba(255, 255, 255, 0.12);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-            max-width: 850px;
-        }
+
         .logo {
             font-family: 'Outfit', sans-serif;
             font-size: 1.25rem;
-            font-weight: 700;
+            font-weight: 800;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             color: white;
             text-decoration: none;
+            letter-spacing: -0.02em;
         }
+
         .logo-icon {
-            width: 28px; height: 28px;
+            width: 32px; height: 32px;
             background: var(--ig-gradient);
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(220, 39, 67, 0.4);
         }
-        .logo-icon svg { width: 16px; fill: white; }
-        .nav-links {
-            display: flex; gap: 32px;
-        }
-        .nav-links a {
+
+        .logo-icon svg { width: 18px; fill: white; }
+
+        .live-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
             color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: color 0.2s;
+            background: rgba(255,255,255,0.05);
+            padding: 6px 14px;
+            border-radius: 100px;
+            margin-right: 12px;
         }
-        .nav-links a:hover { color: white; }
-        .btn-primary {
+
+        .pulse-dot {
+            width: 6px; height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-green);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 1; }
+            70% { transform: scale(2); opacity: 0; }
+            100% { transform: scale(0.95); opacity: 0; }
+        }
+
+        .btn-access {
             background: var(--ig-gradient);
             color: white;
             padding: 12px 28px;
             border-radius: 100px;
             text-decoration: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-weight: 700;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            transition: var(--transition-smooth);
             border: none;
             cursor: pointer;
-            display: inline-block;
-        }
-        .btn-primary:hover {
-            transform: scale(1.02);
-            box-shadow: 0 8px 25px rgba(220, 39, 67, 0.4);
-        }
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 140px 5% 80px;
-            gap: 40px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        .hero-content {
-            flex: 1;
-            max-width: 620px;
-            z-index: 10;
-        }
-        .hero h1 {
-            font-size: 4.8rem;
-            letter-spacing: -0.04em;
-            margin-bottom: 24px;
-            color: white;
-        }
-        .hero p {
-            font-size: 1.15rem;
-            color: var(--text-muted);
-            margin-bottom: 40px;
-            max-width: 540px;
-        }
-        .hero-input-group {
-            display: flex;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-color);
-            border-radius: 100px;
-            padding: 8px;
-            backdrop-filter: blur(20px);
-            transition: border-color 0.3s;
-        }
-        .hero-input-group:focus-within {
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-        .hero-input-group input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 0 24px;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-        }
-        .hero-input-group input::placeholder {
-            color: #666666;
-        }
-        .security-note {
-            font-size: 0.8rem;
-            color: #555555;
-            margin-top: 16px;
-            margin-left: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .hero-visual {
-            flex: 1;
-            position: relative;
-            perspective: 1200px;
-        }
-        .app-mockup {
-            width: 100%;
-            max-width: 460px;
-            background: rgba(12, 12, 12, 0.6);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 32px;
-            padding: 28px;
-            box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
-            transform: rotateY(-12deg) rotateX(8deg);
-            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            margin-left: auto;
-        }
-        .hero-visual:hover .app-mockup {
-            transform: rotateY(-4deg) rotateX(4deg) translateY(-12px);
-        }
-        .mockup-header {
-            display: flex; gap: 14px; align-items: center; margin-bottom: 28px;
-        }
-        .mockup-avatar {
-            width: 44px; height: 44px; border-radius: 50%;
-            background: linear-gradient(135deg, #333, #111);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .mockup-skeleton-title { width: 130px; height: 12px; background: rgba(255,255,255,0.15); border-radius: 4px; margin-bottom: 8px; }
-        .mockup-skeleton-sub { width: 90px; height: 10px; background: rgba(255,255,255,0.08); border-radius: 4px; }
-        .mockup-badge {
-            margin-left: auto;
-            padding: 6px 12px;
-            background: rgba(220, 39, 67, 0.1);
-            border: 1px solid rgba(220, 39, 67, 0.3);
-            border-radius: 100px;
-            font-size: 0.7rem;
-            color: #dc2743;
-            font-weight: 700;
-        }
-        .mockup-list { display: flex; flex-direction: column; gap: 14px; }
-        .mockup-item {
-            display: flex; align-items: center; gap: 14px; padding: 14px;
-            background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px solid rgba(255,255,255,0.04);
-            position: relative; overflow: hidden;
-        }
-        .mockup-item::after {
-            content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-            transform: translateX(-100%); animation: shimmer 2.5s infinite;
-        }
-        @keyframes shimmer { 100% { transform: translateX(100%); } }
-        .mockup-name { font-size: 0.9rem; font-weight: 600; color: white; margin-bottom: 3px; }
-        .mockup-msg { font-size: 0.75rem; color: #777777; }
-        .mockup-rank { margin-left: auto; font-weight: 700; color: #444444; font-size: 0.9rem; }
-        .features {
-            padding: 120px 5%;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .section-title {
-            text-align: center;
-            font-size: 3.5rem;
-            margin-bottom: 24px;
-        }
-        .section-subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            margin-bottom: 80px;
-            font-size: 1.15rem;
-            max-width: 640px;
-            margin-left: auto; margin-right: auto;
-        }
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 32px;
-        }
-        .feature-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 48px 32px;
-            border-radius: 32px;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .feature-card:hover {
-            border-color: rgba(255,255,255,0.15);
-            transform: translateY(-8px);
-            background: rgba(255,255,255,0.04);
-        }
-        .feature-icon {
-            width: 56px; height: 56px;
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.05);
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 28px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .feature-icon svg { width: 24px; fill: white; }
-        .feature-card h3 { font-size: 1.4rem; margin-bottom: 14px; }
-        .feature-card p { color: var(--text-muted); font-size: 1rem; }
-        .steps {
-            padding: 140px 5%;
-            background: linear-gradient(180deg, var(--bg-dark) 0%, #050505 100%);
-            border-top: 1px solid var(--border-color);
-        }
-        .steps-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 80px;
-        }
-        .step-row {
-            display: flex;
-            align-items: center;
-            gap: 60px;
-        }
-        .step-row:nth-child(even) { flex-direction: row-reverse; }
-        .step-number {
-            font-size: 8rem;
-            font-weight: 800;
-            color: rgba(255,255,255,0.02);
-            line-height: 0.8;
-            position: absolute;
-            z-index: 0;
-            top: -30px; left: -30px;
-            font-family: 'Outfit';
-        }
-        .step-text { flex: 1; position: relative; z-index: 1; }
-        .step-text h3 { font-size: 2.2rem; margin-bottom: 18px; color: white; }
-        .step-text p { color: var(--text-muted); font-size: 1.1rem; }
-        .step-img {
-            flex: 1;
-            background: rgba(255,255,255,0.01);
-            border: 1px solid var(--border-color);
-            border-radius: 32px;
-            height: 300px;
-            display: flex; align-items: center; justify-content: center;
             position: relative;
             overflow: hidden;
         }
-        .step-img::before {
+
+        .btn-access::before {
             content: '';
             position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 70%);
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
         }
-        .cta-section {
-            padding: 140px 5%;
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto;
+
+        .btn-access:hover::before { left: 100%; }
+        .btn-access:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(220, 39, 67, 0.4);
         }
-        .cta-section h2 {
-            font-size: 3.5rem;
+
+        /* ==========================================================================
+           4. HERO SECTION (A FERIDA)
+           ========================================================================== */
+        .hero {
+            min-height: 100svh; /* Resolve bug do Safari */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 120px;
+            padding-bottom: 80px;
+            gap: 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-content {
+            flex: 1.2;
+            max-width: 680px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(220, 39, 67, 0.1);
+            border: 1px solid rgba(220, 39, 67, 0.3);
+            color: #ff4d6d;
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
             margin-bottom: 24px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
-        .cta-section p {
-            font-size: 1.2rem;
+
+        .hero h1 {
+            font-size: clamp(3rem, 5vw, 5.5rem);
+            margin-bottom: 20px;
+            color: white;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .hero h1 span {
+            background: var(--ig-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 1.5vw, 1.25rem);
             color: var(--text-muted);
             margin-bottom: 48px;
+            max-width: 580px;
+            line-height: 1.6;
         }
+
+        /* Input Cirúrgico e Objetivo */
+        .hero-action {
+            position: relative;
+            max-width: 500px;
+        }
+
+        .input-group {
+            display: flex;
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 8px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: var(--transition-smooth);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 2px 10px rgba(255,255,255,0.02);
+        }
+
+        .input-group:focus-within {
+            border-color: rgba(220, 39, 67, 0.6);
+            box-shadow: 0 20px 50px rgba(220, 39, 67, 0.15), inset 0 0 0 1px rgba(220, 39, 67, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .input-prefix {
+            display: flex; align-items: center; justify-content: center;
+            padding-left: 20px; color: var(--text-muted); font-weight: 600; font-size: 1.2rem;
+        }
+
+        .input-group input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 16px 12px;
+            color: white;
+            font-size: 16px; /* Evita zoom no iOS Safari */
+            font-weight: 500;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+        }
+
+        .input-group input::placeholder { color: #555555; }
+
+        .btn-spy {
+            background: var(--ig-gradient);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 0 32px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            box-shadow: 0 4px 15px rgba(220, 39, 67, 0.3);
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .btn-spy:hover {
+            background: var(--ig-gradient-hover);
+            transform: scale(1.03);
+            box-shadow: 0 8px 25px rgba(220, 39, 67, 0.5);
+        }
+
+        .security-note {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: #666;
+            margin-left: 12px;
+        }
+
+        .security-note svg { width: 14px; stroke: var(--accent-green); }
+
+        /* Mockup 3D Flutuante */
+        .hero-visual {
+            flex: 1;
+            position: relative;
+            perspective: 1500px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .phone-mockup {
+            width: 100%;
+            max-width: 380px;
+            background: rgba(18, 18, 18, 0.7);
+            backdrop-filter: var(--blur-heavy);
+            -webkit-backdrop-filter: var(--blur-heavy);
+            border: 1px solid var(--glass-border);
+            border-radius: 40px;
+            padding: 24px;
+            box-shadow: 
+                -20px 40px 80px rgba(0,0,0,0.8), 
+                inset 0 1px 2px rgba(255,255,255,0.2),
+                inset 0 0 0 4px rgba(255,255,255,0.02);
+            transform: rotateY(-15deg) rotateX(10deg) translateZ(0);
+            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: float 6s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        .hero-visual:hover .phone-mockup {
+            transform: rotateY(-5deg) rotateX(5deg) translateY(-10px);
+        }
+
+        @keyframes float {
+            0% { transform: rotateY(-15deg) rotateX(10deg) translateY(0px); }
+            50% { transform: rotateY(-15deg) rotateX(10deg) translateY(-20px); }
+            100% { transform: rotateY(-15deg) rotateX(10deg) translateY(0px); }
+        }
+
+        /* Elementos Internos do Mockup */
+        .mockup-header {
+            display: flex; justify-content: center; margin-bottom: 24px; position: relative;
+        }
+        .mockup-notch {
+            width: 120px; height: 24px; background: #000; border-radius: 0 0 12px 12px; position: absolute; top: -24px;
+        }
+        .mockup-title { font-family: 'Outfit'; font-weight: 700; color: white; font-size: 1.1rem; text-align: center; }
+        
+        .mockup-list { display: flex; flex-direction: column; gap: 12px; }
+        .mockup-item {
+            background: var(--glass-bg);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            transform-origin: top;
+        }
+        
+        /* Shimmer animado para simular carregamento/rastreamento */
+        .mockup-item::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            animation: scanline 3s infinite linear;
+        }
+
+        @keyframes scanline { 100% { left: 200%; } }
+
+        .m-avatar {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: #222;
+            padding: 2px;
+            background-clip: content-box;
+            border: 2px solid transparent;
+        }
+        .m-avatar.story {
+            background: linear-gradient(#111, #111) padding-box, var(--ig-gradient) border-box;
+        }
+        
+        .m-info { flex: 1; }
+        .m-name { width: 60%; height: 12px; background: rgba(255,255,255,0.8); border-radius: 4px; margin-bottom: 8px; }
+        .m-desc { width: 40%; height: 10px; background: rgba(255,255,255,0.3); border-radius: 4px; }
+        
+        .m-rank {
+            background: rgba(255,255,255,0.1);
+            color: white; font-family: 'Outfit'; font-weight: 800; font-size: 0.9rem;
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 8px;
+        }
+        .m-rank.top1 { background: var(--ig-gradient); box-shadow: 0 4px 10px rgba(220,39,67,0.3); }
+
+        .mockup-blur-overlay {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
+            background: linear-gradient(to top, rgba(18,18,18,1), transparent);
+            border-radius: 0 0 40px 40px;
+            display: flex; align-items: flex-end; justify-content: center; padding: 24px;
+        }
+        .mockup-blur-overlay button {
+            width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05); color: white; font-weight: 600; font-family: 'Inter'; font-size: 0.9rem;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); cursor: pointer;
+        }
+
+        /* ==========================================================================
+           5. FEATURES (A TECNOLOGIA)
+           ========================================================================== */
+        .features {
+            padding: 120px 0;
+            background: var(--bg-surface);
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+            width: 100%;
+        }
+
+        .section-header { text-align: center; margin-bottom: 80px; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .section-header h2 { font-size: clamp(2.5rem, 4vw, 3.5rem); margin-bottom: 20px; }
+        .section-header p { color: var(--text-muted); font-size: 1.15rem; }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+        }
+
+        .feat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 40px 32px;
+            border-radius: 24px;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--ig-gradient);
+            opacity: 0; transition: 0.3s;
+        }
+
+        .feat-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.15);
+        }
+        .feat-card:hover::before { opacity: 1; }
+
+        .feat-icon {
+            width: 56px; height: 56px; border-radius: 16px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center; margin-bottom: 24px;
+        }
+        .feat-icon svg { width: 28px; stroke: white; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        
+        .feat-card h3 { font-size: 1.5rem; margin-bottom: 12px; }
+        .feat-card p { color: var(--text-muted); font-size: 1rem; line-height: 1.6; }
+
+        /* ==========================================================================
+           6. FUNCIONAMENTO (PASSO A PASSO OBJETIVO)
+           ========================================================================== */
+        .steps { padding: 140px 0; width: 100%; }
+        
+        .step-row {
+            display: flex; align-items: center; gap: 80px; margin-bottom: 100px;
+        }
+        .step-row:nth-child(even) { flex-direction: row-reverse; }
+        .step-row:last-child { margin-bottom: 0; }
+
+        .step-content { flex: 1; position: relative; }
+        .step-num {
+            font-size: 10rem; font-family: 'Outfit'; font-weight: 900;
+            color: rgba(255,255,255,0.02); line-height: 0.7;
+            position: absolute; top: -40px; left: -20px; z-index: -1;
+        }
+        .step-content h3 { font-size: 2.5rem; margin-bottom: 20px; }
+        .step-content p { font-size: 1.15rem; color: var(--text-muted); max-width: 480px; }
+
+        .step-visual {
+            flex: 1; height: 400px;
+            background: linear-gradient(145deg, rgba(25,25,25,1) 0%, rgba(10,10,10,1) 100%);
+            border: 1px solid var(--glass-border); border-radius: 32px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.8);
+        }
+
+        /* Animações Visuais dos Passos */
+        .v-typing {
+            font-family: monospace; font-size: 1.5rem; color: white;
+            background: rgba(0,0,0,0.5); padding: 16px 32px; border-radius: 100px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .v-typing::after {
+            content: '|'; animation: blink 1s infinite; color: var(--accent-red); font-weight: bold;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        .v-radar {
+            width: 150px; height: 150px; border-radius: 50%;
+            border: 1px solid rgba(220,39,67,0.3); position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .v-radar::before {
+            content: ''; position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 70%, rgba(220,39,67,0.8) 100%);
+            animation: spin 2s linear infinite;
+        }
+        .v-radar-core {
+            width: 60px; height: 60px; background: var(--ig-gradient); border-radius: 50%; z-index: 2;
+            box-shadow: 0 0 30px rgba(220,39,67,0.5);
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* ==========================================================================
+           7. CTA E FOOTER
+           ========================================================================== */
+        .cta {
+            width: 100%; padding: 120px 0; text-align: center;
+            background: radial-gradient(circle at center, rgba(220,39,67,0.1) 0%, transparent 60%);
+        }
+        .cta h2 { font-size: clamp(3rem, 5vw, 4.5rem); margin-bottom: 24px; }
+        .cta p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 48px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .cta .btn-spy { padding: 20px 48px; font-size: 1.1rem; display: inline-flex; border-radius: 100px; }
+
         footer {
-            border-top: 1px solid var(--border-color);
-            padding: 60px 5%;
-            text-align: center;
-            color: #555555;
-            font-size: 0.9rem;
+            width: 100%; padding: 60px 0 40px; text-align: center;
+            border-top: 1px solid var(--glass-border);
         }
-        .footer-logo {
-            display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 24px;
-        }
-        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .footer-logo { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px; opacity: 0.5; }
+        .footer-logo svg { width: 16px; fill: white; }
+        .footer-text { color: #555; font-size: 0.85rem; margin-bottom: 16px; }
+        .footer-links a { color: #777; text-decoration: none; font-size: 0.85rem; margin: 0 12px; transition: 0.2s; }
+        .footer-links a:hover { color: white; }
+
+        /* ==========================================================================
+           8. UTILITÁRIOS E ANIMAÇÕES ON SCROLL
+           ========================================================================== */
+        .reveal { opacity: 0; transform: translateY(40px); transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1); will-change: opacity, transform; }
         .reveal.active { opacity: 1; transform: translateY(0); }
-        @media (max-width: 900px) {
-            .hero { flex-direction: column; text-align: center; padding-top: 160px; }
-            .hero h1 { font-size: 3.2rem; }
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+
+        /* ==========================================================================
+           9. MEDIA QUERIES (RESPONSIVIDADE EXTREMA CIRÚRGICA)
+           ========================================================================== */
+        @media (max-width: 1024px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 160px; padding-bottom: 40px; gap: 60px; }
             .hero-content { display: flex; flex-direction: column; align-items: center; }
-            .hero-input-group { width: 100%; flex-direction: column; background: transparent; border: none; gap: 12px; }
-            .hero-input-group input { border: 1px solid var(--border-color); border-radius: 100px; padding: 18px; text-align: center; }
-            .hero-input-group button { width: 100%; }
-            .nav-links { display: none; }
-            .step-row, .step-row:nth-child(even) { flex-direction: column; text-align: left; }
-            .app-mockup { transform: rotateY(0) rotateX(0); margin: 0 auto; }
-            .section-title, .cta-section h2 { font-size: 2.5rem; }
-            .step-text { padding-left: 20px; }
+            .hero-action { width: 100%; }
+            .phone-mockup { transform: rotateY(0) rotateX(0) !important; animation: floatMobile 6s ease-in-out infinite; }
+            @keyframes floatMobile { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+            .step-row, .step-row:nth-child(even) { flex-direction: column; text-align: center; gap: 40px; }
+            .step-num { left: 50%; transform: translateX(-50%); top: -60px; }
+            .step-visual { width: 100%; height: 300px; }
         }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 12px; justify-content: center; }
+            .live-status { display: none; /* Simplifica header no mobile */ }
+            .btn-access { display: none; } /* Deixa apenas a logo centralizada */
+            
+            .input-group { flex-direction: column; background: transparent; border: none; box-shadow: none; padding: 0; gap: 12px; }
+            .input-group:focus-within { transform: none; box-shadow: none; }
+            .input-group input { 
+                background: rgba(20,20,20,0.8); border: 1px solid var(--glass-border); 
+                border-radius: 16px; padding: 18px; text-align: center;
+            }
+            .input-prefix { display: none; }
+            .btn-spy { width: 100%; padding: 18px; justify-content: center; border-radius: 16px; }
+            
+            .features { padding: 80px 0; }
+            .steps { padding: 80px 0; }
+            .cta { padding: 80px 0; }
+        }
+
     </style>
 </head>
 <body>
-    <div class="ambient-glow glow-1"></div>
-    <div class="ambient-glow glow-2"></div>
-    <div class="ambient-glow glow-3"></div>
-    <div class="navbar-container">
+
+    <!-- Canvas de Efeitos de Fundo -->
+    <div class="ambient-canvas">
+        <div class="glow-orb glow-1"></div>
+        <div class="glow-orb glow-2"></div>
+        <div class="glow-orb glow-3"></div>
+    </div>
+
+    <!-- Navegação -->
+    <div class="navbar-wrapper">
         <header class="navbar" id="navbar">
             <a href="#" class="logo">
                 <div class="logo-icon">
@@ -388,198 +656,284 @@
                 </div>
                 DM Monitor
             </a>
-            <nav class="nav-links">
-                <a href="#tecnologia">Tecnologia</a>
-                <a href="#funcionamento">Funcionamento</a>
-            </nav>
-            <button class="btn-primary" onclick="window.location.href='/auth'" style="padding: 10px 24px; font-size: 0.85rem;">Acessar Painel</button>
+            <div style="display: flex; align-items: center;">
+                <div class="live-status">
+                    <div class="pulse-dot"></div>
+                    Sistema Online
+                </div>
+                <button class="btn-access" onclick="window.location.href='/auth'">Acessar Painel</button>
+            </div>
         </header>
     </div>
-    <section class="hero">
-        <div class="hero-content reveal">
-            <h1>Descubra com quem ela(e) mais conversa.</h1>
-            <p>A intuição raramente erra. Acabe com as dúvidas e descubra em segundos quem domina o topo do Direct do seu parceiro ou daquele crush. Invisível, rápido e sem deixar rastros.</p>
-            <div class="hero-input-group">
-                <input type="text" placeholder="@username do perfil alvo..." spellcheck="false">
-                <button class="btn-primary" onclick="window.location.href='/auth'">Espionar Perfil</button>
-            </div>
-            <div class="security-note">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                Conexão anônima. O dono do perfil não recebe notificações.
-            </div>
-        </div>
-        <div class="hero-visual reveal">
-            <div class="app-mockup">
-                <div class="mockup-header">
-                    <div class="mockup-avatar"></div>
-                    <div>
-                        <div class="mockup-skeleton-title"></div>
-                        <div class="mockup-skeleton-sub"></div>
-                    </div>
-                    <div class="mockup-badge">Top Interações</div>
-                </div>
-                <div class="mockup-list">
-                    <div class="mockup-item">
-                        <div class="mockup-avatar" style="background: #E57399; width: 36px; height: 36px;"></div>
-                        <div>
-                            <div class="mockup-name">@sofia.martins</div>
-                            <div class="mockup-msg">Visualizado há 5m</div>
+
+    <!-- Contêiner Master (Proteção contra Zoom e UltraWides) -->
+    <main class="master-container">
+        
+        <!-- Hero Section -->
+        <section class="section-wrapper">
+            <div class="hero">
+                <div class="hero-content reveal">
+                    <h1>Com quem ela(e) <span>conversa</span> agora?</h1>
+                    <p>A ansiedade de não saber acaba aqui. Digite o usuário da pessoa e descubra em segundos quem domina o topo do Direct. Sem pedir senhas, sem deixar rastros.</p>
+                    
+                    <div class="hero-action">
+                        <div class="input-group">
+                            <div class="input-prefix">@</div>
+                            <input type="text" id="target-username" placeholder="nome_do_perfil_aqui" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none">
+                            <button class="btn-spy" onclick="startScan()">
+                                Rastrear
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </button>
                         </div>
-                        <div class="mockup-rank">#1</div>
-                    </div>
-                    <div class="mockup-item">
-                        <div class="mockup-avatar" style="background: #64B5F6; width: 36px; height: 36px;"></div>
-                        <div>
-                            <div class="mockup-name">@lucas_oliveira</div>
-                            <div class="mockup-msg">Mensagem enviada...</div>
+                        <div class="security-note">
+                            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            O alvo não recebe notificação. 100% invisível.
                         </div>
-                        <div class="mockup-rank">#2</div>
                     </div>
-                    <div class="mockup-item">
-                        <div class="mockup-avatar" style="background: #81C784; width: 36px; height: 36px;"></div>
-                        <div>
-                            <div class="mockup-name">@ana.beatriz</div>
-                            <div class="mockup-msg">Áudio (0:15)</div>
+                </div>
+
+                <div class="hero-visual reveal delay-1">
+                    <div class="phone-mockup">
+                        <div class="mockup-notch"></div>
+                        <div class="mockup-header">
+                            <div class="mockup-title">Top Interações</div>
                         </div>
-                        <div class="mockup-rank">#3</div>
-                    </div>
-                </div>
-                <div style="margin-top: 24px;">
-                    <button class="btn-primary" onclick="window.location.href='/auth'" style="width: 100%; font-size: 0.9rem; padding: 14px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1);">Desbloquear Top 30</button>
-                </div>
-            </div>
-        </div>
-    </section>
-    <section class="features" id="tecnologia">
-        <h2 class="section-title reveal">A verdade não deixa rastros.</h2>
-        <p class="section-subtitle reveal">Nosso sistema cruza metadados de interação entre contas, revelando a lista exata de quem troca mais mensagens, sem que ninguém saiba o que você está fazendo.</p>
-        <div class="features-grid">
-            <div class="feature-card reveal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                </div>
-                <h3>Invisibilidade Absoluta</h3>
-                <p>Você navega como um fantasma. Zero notificações, zero suspeitas. O alvo não faz ideia de que o perfil está sendo analisado neste momento.</p>
-            </div>
-            <div class="feature-card reveal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                </div>
-                <h3>Sem Pedir Senhas</h3>
-                <p>Esqueça métodos arriscados que bloqueiam a conta. Nós só precisamos do nome de usuário para iniciar a varredura externa de dados.</p>
-            </div>
-            <div class="feature-card reveal">
-                <div class="feature-icon">
-                    <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                </div>
-                <h3>Resposta em Segundos</h3>
-                <p>Assim que você inicia a busca, nosso algoritmo processa as interações e entrega o ranking estruturado diretamente na sua tela.</p>
-            </div>
-        </div>
-    </section>
-    <section class="steps" id="funcionamento">
-        <div class="steps-container">
-            <h2 class="section-title reveal" style="margin-bottom: 30px;">Como descobrir hoje.</h2>
-            <div class="step-row reveal">
-                <div class="step-text">
-                    <div class="step-number">01</div>
-                    <h3>Insira o perfil</h3>
-                    <p>Basta digitar o @ do usuário da pessoa. Se o perfil for público ou você já tiver acesso a ele na sua rede, nosso sistema conecta instantaneamente.</p>
-                </div>
-                <div class="step-img">
-                    <div style="background: rgba(0,0,0,0.4); padding: 16px 24px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; width: 80%; backdrop-filter: blur(10px);">
-                        <span style="color: #666; font-size: 1rem;">@</span><span style="color: white; border-right: 2px solid white; padding-right: 4px; animation: blink 1s infinite;">nome_da_pessoa</span>
-                    </div>
-                </div>
-            </div>
-            <div class="step-row reveal">
-                <div class="step-text">
-                    <div class="step-number">02</div>
-                    <h3>Inicie a Varredura</h3>
-                    <p>Ao confirmar, cruzamos padrões de engajamento, curtidas ocultas, menções e horários de conexão para montar o nível de prioridade no Direct.</p>
-                </div>
-                <div class="step-img">
-                    <div style="width: 120px; height: 120px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; position: relative;">
-                        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--ig-gradient); filter: blur(20px); opacity: 0.5; position: absolute;"></div>
-                        <svg viewBox="0 0 24 24" style="width: 40px; fill: white; z-index: 2;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                    </div>
-                </div>
-            </div>
-            <div class="step-row reveal">
-                <div class="step-text">
-                    <div class="step-number">03</div>
-                    <h3>Acesse o Topo da DM</h3>
-                    <p>Veja o ranking final. Fatos, sem achismos. Saiba exatamente quem é a prioridade número 1 e quem completa o top 30.</p>
-                </div>
-                <div class="step-img">
-                    <div style="display: flex; flex-direction: column; gap: 12px; width: 70%;">
-                        <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 16px; border: 1px solid rgba(255,255,255,0.1);">
-                            <div style="font-weight: 800; color: #dc2743; font-size: 1.2rem;">#1</div>
-                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.9); border-radius: 50%;"></div>
-                            <div style="flex: 1; height: 10px; background: rgba(255,255,255,0.2); border-radius: 4px;"></div>
+                        <div class="mockup-list">
+                            <!-- Item 1 -->
+                            <div class="mockup-item">
+                                <div class="m-avatar story" style="background-color: #333;"></div>
+                                <div class="m-info">
+                                    <div class="m-name"></div>
+                                    <div class="m-desc"></div>
+                                </div>
+                                <div class="m-rank top1">1</div>
+                            </div>
+                            <!-- Item 2 -->
+                            <div class="mockup-item">
+                                <div class="m-avatar" style="background-color: #222;"></div>
+                                <div class="m-info">
+                                    <div class="m-name" style="width: 50%;"></div>
+                                    <div class="m-desc" style="width: 30%;"></div>
+                                </div>
+                                <div class="m-rank">2</div>
+                            </div>
+                            <!-- Item 3 -->
+                            <div class="mockup-item">
+                                <div class="m-avatar" style="background-color: #1a1a1a;"></div>
+                                <div class="m-info">
+                                    <div class="m-name" style="width: 70%;"></div>
+                                    <div class="m-desc" style="width: 50%;"></div>
+                                </div>
+                                <div class="m-rank">3</div>
+                            </div>
+                            <!-- Item 4 (Escondido pelo Blur) -->
+                            <div class="mockup-item" style="opacity: 0.5;">
+                                <div class="m-avatar" style="background-color: #111;"></div>
+                                <div class="m-info">
+                                    <div class="m-name" style="width: 40%;"></div>
+                                    <div class="m-desc" style="width: 20%;"></div>
+                                </div>
+                                <div class="m-rank" style="opacity: 0.5;">4</div>
+                            </div>
                         </div>
-                        <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 16px;">
-                            <div style="font-weight: 800; color: #555; font-size: 1.2rem;">#2</div>
-                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
-                            <div style="flex: 1; height: 10px; background: rgba(255,255,255,0.05); border-radius: 4px;"></div>
+                        <div class="mockup-blur-overlay">
+                            <button onclick="window.location.href='/auth'">Desbloquear Lista Completa</button>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-    <section class="cta-section reveal">
-        <h2>Chega de noites sem dormir.</h2>
-        <p>Tome o controle da situação hoje. Descubra de uma vez por todas com quem a pessoa que você gosta passa horas conversando no celular. Acesso restrito liberado após autenticação.</p>
-        <button class="btn-primary" onclick="window.location.href='/auth'" style="padding: 18px 40px; font-size: 1.1rem;">Acessar o Painel Agora</button>
-    </section>
-    <footer>
-        <div class="footer-logo">
-            <div class="logo-icon" style="width: 20px; height: 20px; border-radius: 6px;">
-                <svg viewBox="0 0 24 24" style="width: 12px;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <div class="section-wrapper">
+                <div class="section-header reveal">
+                    <h2>A verdade, sem deixar rastros.</h2>
+                    <p>Esqueça tutoriais furados. Nosso algoritmo cruza metadados públicos e padrões de engajamento para revelar exatamente quem é a prioridade.</p>
+                </div>
+                
+                <div class="features-grid">
+                    <div class="feat-card reveal delay-1">
+                        <div class="feat-icon">
+                            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </div>
+                        <h3>Invisibilidade Total</h3>
+                        <p>Você navega como um fantasma. Zero notificações, zero suspeitas. O dono da conta nunca saberá que foi analisado.</p>
+                    </div>
+                    <div class="feat-card reveal delay-2">
+                        <div class="feat-icon">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </div>
+                        <h3>Apenas o Usuário (@)</h3>
+                        <p>Não precisamos de senhas. Você não corre risco de ter sua conta bloqueada. Basta inserir o "@" e nós fazemos o resto.</p>
+                    </div>
+                    <div class="feat-card reveal delay-3">
+                        <div class="feat-icon">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        </div>
+                        <h3>Resultado Imediato</h3>
+                        <p>Nosso sistema processa milhares de interações em nuvem. A lista das pessoas com quem ele(a) mais fala é gerada na hora.</p>
+                    </div>
+                </div>
             </div>
-            <strong style="color: white; font-family: 'Outfit'; letter-spacing: -0.02em;">DM Monitor</strong>
-        </div>
-        <p>&copy; 2026 DM Monitor. Todos os direitos reservados. Sem vínculos diretos com aplicativos terceiros.</p>
-        <div style="margin-top: 16px; display: flex; justify-content: center; gap: 24px;">
-            <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 0.8rem; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'">Termos</a>
-            <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 0.8rem; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'">Privacidade</a>
-        </div>
-    </footer>
+        </section>
+
+        <!-- Passos Section -->
+        <section class="steps">
+            <div class="section-wrapper">
+                <div class="section-header reveal" style="margin-bottom: 120px;">
+                    <h2>Como descobrir agora.</h2>
+                </div>
+
+                <div class="step-row reveal">
+                    <div class="step-content">
+                        <div class="step-num">01</div>
+                        <h3>Informe o alvo</h3>
+                        <p>No topo do site, insira o @ do perfil exato que você deseja espionar. O sistema se conecta ao banco de dados externo instantaneamente.</p>
+                    </div>
+                    <div class="step-visual">
+                        <div class="v-typing">@nome_do_alvo</div>
+                    </div>
+                </div>
+
+                <div class="step-row reveal">
+                    <div class="step-content">
+                        <div class="step-num">02</div>
+                        <h3>Varredura Profunda</h3>
+                        <p>A inteligência artificial analisa curtidas ocultas, menções, horários de conexão online e cruza os dados para montar o quebra-cabeça do direct.</p>
+                    </div>
+                    <div class="step-visual">
+                        <div class="v-radar">
+                            <div class="v-radar-core"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-row reveal">
+                    <div class="step-content">
+                        <div class="step-num">03</div>
+                        <h3>Acesse o Topo</h3>
+                        <p>Fatos, sem achismos. Receba na sua tela a lista numerada exata das contas que dominam as mensagens diárias do perfil analisado.</p>
+                    </div>
+                    <div class="step-visual" style="flex-direction: column; gap: 10px;">
+                        <div style="width: 60%; height: 60px; background: rgba(220,39,67,0.2); border: 1px solid rgba(220,39,67,0.5); border-radius: 12px; display: flex; align-items: center; padding: 0 20px;">
+                            <span style="color: #ff4d6d; font-weight: 800; font-size: 1.2rem; font-family: 'Outfit';">#1 Contato Favorito</span>
+                        </div>
+                        <div style="width: 50%; height: 50px; background: rgba(255,255,255,0.05); border-radius: 12px;"></div>
+                        <div style="width: 45%; height: 50px; background: rgba(255,255,255,0.02); border-radius: 12px;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta">
+            <div class="section-wrapper reveal">
+                <h2>Chega de dúvidas.</h2>
+                <p>Tome o controle da situação hoje. Descubra de uma vez por todas com quem a pessoa que você gosta passa horas conversando no celular.</p>
+                <button class="btn-spy" onclick="window.location.href='/auth'" style="box-shadow: 0 10px 40px rgba(220, 39, 67, 0.4);">
+                    Acessar o Painel Agora
+                </button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <div class="section-wrapper">
+                <div class="footer-logo">
+                    <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                    <strong style="font-family: 'Outfit';">DM Monitor</strong>
+                </div>
+                <div class="footer-text">
+                    &copy; 2026 DM Monitor. Todos os direitos reservados. Este serviço opera de forma independente.
+                </div>
+                <div class="footer-links">
+                    <a href="#">Termos de Uso</a>
+                    <a href="#">Política de Privacidade</a>
+                </div>
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- JavaScript Cirúrgico para Interações e Performance -->
     <script>
+        // 1. Lógica do Input (Formatação de Usuário)
+        const usernameInput = document.getElementById('target-username');
+        
+        usernameInput.addEventListener('input', function(e) {
+            // Remove espaços e caracteres especiais indesejados
+            let val = this.value.replace(/[^a-zA-Z0-9._]/g, '');
+            // Se o usuário tentar digitar o @, remove para não duplicar com o prefixo fixo
+            if(val.startsWith('@')) val = val.substring(1);
+            this.value = val;
+        });
+
+        // Simulação de ação do botão principal
+        function startScan() {
+            if(usernameInput.value.length < 2) {
+                usernameInput.focus();
+                // Efeito de erro visual (shake)
+                usernameInput.parentElement.style.transform = 'translateX(-10px)';
+                setTimeout(() => usernameInput.parentElement.style.transform = 'translateX(10px)', 50);
+                setTimeout(() => usernameInput.parentElement.style.transform = 'translateX(0)', 100);
+                return;
+            }
+            // Redirecionamento (simulado)
+            window.location.href = '/auth?target=' + usernameInput.value;
+        }
+
+        // Permite "Enter" no teclado para iniciar
+        usernameInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') startScan();
+        });
+
+        // 2. Animação de Scroll Avançada (Intersection Observer)
+        document.addEventListener('DOMContentLoaded', () => {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px 0px -10% 0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // Desobserva após animar para melhorar performance
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.reveal').forEach((el) => {
+                observer.observe(el);
+            });
+
+            // Ativa elementos que já estão no topo imediatamente
+            setTimeout(() => {
+                document.querySelectorAll('.reveal').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if(rect.top < window.innerHeight) {
+                        el.classList.add('active');
+                    }
+                });
+            }, 100);
+        });
+
+        // 3. Efeito Glassmorphism do Header ao rolar a página
         const navbar = document.getElementById('navbar');
         window.addEventListener('scroll', () => {
-            if (window.scrollY > 40) {
-                navbar.classList.add('scrolled');
+            if (window.scrollY > 50) {
+                navbar.style.background = 'rgba(10, 10, 10, 0.85)';
+                navbar.style.padding = '8px 8px 8px 24px';
+                navbar.style.maxWidth = '750px';
             } else {
-                navbar.classList.remove('scrolled');
+                navbar.style.background = 'rgba(15, 15, 15, 0.6)';
+                navbar.style.padding = '10px 10px 10px 24px';
+                navbar.style.maxWidth = '800px';
             }
-        });
-        const revealElements = document.querySelectorAll('.reveal');
-        const revealOptions = {
-            threshold: 0.15,
-            rootMargin: "0px 0px -40px 0px"
-        };
-        const revealOnScroll = new IntersectionObserver(function(entries, observer) {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) {
-                    return;
-                }
-                entry.target.classList.add('active');
-                observer.unobserve(entry.target);
-            });
-        }, revealOptions);
-        revealElements.forEach(el => {
-            revealOnScroll.observe(el);
-        });
-        setTimeout(() => {
-            document.querySelectorAll('.reveal').forEach(el => {
-                const rect = el.getBoundingClientRect();
-                if(rect.top < window.innerHeight) {
-                    el.classList.add('active');
-                }
-            });
-        }, 50);
+        }, { passive: true });
     </script>
 </body>
 </html>
