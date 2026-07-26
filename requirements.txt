@@ -3,3 +3,4 @@ requests
 pymongo
 dnspython
 Werkzeug
+qrcode[pil]
