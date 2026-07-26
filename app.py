@@ -3,6 +3,7 @@ import requests
 import qrcode
 import io
 import base64
+import instaloader
 from flask import Flask, request, render_template, redirect, url_for, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import MongoClient
@@ -14,6 +15,7 @@ app = Flask(__name__, template_folder='.', static_folder='.')
 app.secret_key = '7f8a9e01b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9'
 app.permanent_session_lifetime = timedelta(days=30)
 
+# Configuração do Banco de Dados
 client = MongoClient("mongodb+srv://seyzalel_db_user:q4dKhbwPQwBcmEFZ@dmtopmonitor.dnbpdnd.mongodb.net/?retryWrites=true&w=majority&appName=DMTopMonitor")
 db = client.dmtopmonitor
 users_db = db.users
@@ -23,8 +25,26 @@ users_db.update_many(
     {"$set": {"plan": "standard"}}
 )
 
+# Constantes de Pagamento
 PLUMIFY_API_TOKEN = "hXIVPQ9kPjSQERpJ7ljKkWT0f6qOet4tUgr7kP4LTer5b0SsRq7VaUalBdGg"
 PLUMIFY_BASE_URL = "https://api.plumify.com.br/api/public/v1/transactions"
+
+# -------------------------------------------------------------------
+# CONFIGURAÇÃO DO INSTALOADER (Otimizado para velocidade e sem downloads)
+# -------------------------------------------------------------------
+insta = instaloader.Instaloader(
+    download_pictures=False,
+    download_video_thumbnails=False,
+    download_videos=False,
+    download_geotags=False,
+    download_comments=False,
+    save_metadata=False,
+    compress_json=False
+)
+
+# Cache em memória para buscas instantâneas e evitar bloqueios do Instagram (Rate Limit)
+profile_cache = {}
+# -------------------------------------------------------------------
 
 def login_required(f):
     @wraps(f)
@@ -199,6 +219,48 @@ def check_status(tx_hash):
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+# -------------------------------------------------------------------
+# NOVA ROTA: BUSCA INSTANTÂNEA DE PERFIL DO INSTAGRAM
+# -------------------------------------------------------------------
+@app.route('/api/get_instagram_profile/<username>', methods=['GET'])
+@login_required
+def get_instagram_profile(username):
+    user = users_db.find_one({"_id": ObjectId(session['user_id'])})
+    
+    if not user or user.get('plan') != 'unlimited':
+        return jsonify({'success': False, 'message': 'Acesso negado. Plano incompatível.'}), 403
+
+    clean_username = username.replace('@', '').strip().lower()
+    
+    if not clean_username:
+        return jsonify({'success': False, 'message': 'Usuário inválido.'}), 400
+
+    # Retorna do cache se já foi buscado recentemente (Resposta em milissegundos)
+    if clean_username in profile_cache:
+        return jsonify({'success': True, 'data': profile_cache[clean_username]})
+
+    try:
+        # Busca os dados no Instagram
+        profile = instaloader.Profile.from_username(insta.context, clean_username)
+        
+        profile_data = {
+            'username': profile.username,
+            'full_name': profile.full_name,
+            'followers': profile.followers,
+            'profile_pic_url': profile.profile_pic_url
+        }
+        
+        # Salva no cache
+        profile_cache[clean_username] = profile_data
+        
+        return jsonify({'success': True, 'data': profile_data})
+        
+    except instaloader.exceptions.ProfileNotExistsException:
+        return jsonify({'success': False, 'message': 'Perfil não encontrado.'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': 'Erro ao buscar dados do Instagram.'}), 500
+# -------------------------------------------------------------------
 
 @app.route('/api/get_ranking', methods=['POST'])
 @login_required
