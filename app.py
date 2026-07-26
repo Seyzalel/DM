@@ -3,7 +3,7 @@ import requests
 import qrcode
 import io
 import base64
-import re
+import instaloader
 from flask import Flask, request, render_template, redirect, url_for, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import MongoClient
@@ -30,8 +30,19 @@ PLUMIFY_API_TOKEN = "hXIVPQ9kPjSQERpJ7ljKkWT0f6qOet4tUgr7kP4LTer5b0SsRq7VaUalBdG
 PLUMIFY_BASE_URL = "https://api.plumify.com.br/api/public/v1/transactions"
 
 # -------------------------------------------------------------------
-# CACHE EM MEMÓRIA (Evita requisições repetidas e bloqueios)
+# CONFIGURAÇÃO DO INSTALOADER (Otimizado para velocidade e sem downloads)
 # -------------------------------------------------------------------
+insta = instaloader.Instaloader(
+    download_pictures=False,
+    download_video_thumbnails=False,
+    download_videos=False,
+    download_geotags=False,
+    download_comments=False,
+    save_metadata=False,
+    compress_json=False
+)
+
+# Cache em memória para buscas instantâneas e evitar bloqueios do Instagram (Rate Limit)
 profile_cache = {}
 # -------------------------------------------------------------------
 
@@ -210,7 +221,7 @@ def check_status(tx_hash):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # -------------------------------------------------------------------
-# ROTA ATUALIZADA: SCRAPING FURTIVO (SEM INSTALOADER)
+# NOVA ROTA: BUSCA INSTANTÂNEA DE PERFIL DO INSTAGRAM
 # -------------------------------------------------------------------
 @app.route('/api/get_instagram_profile/<username>', methods=['GET'])
 @login_required
@@ -225,75 +236,30 @@ def get_instagram_profile(username):
     if not clean_username:
         return jsonify({'success': False, 'message': 'Usuário inválido.'}), 400
 
+    # Retorna do cache se já foi buscado recentemente (Resposta em milissegundos)
     if clean_username in profile_cache:
         return jsonify({'success': True, 'data': profile_cache[clean_username]})
 
     try:
-        url = f"https://www.instagram.com/{clean_username}/"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-        }
-        response = requests.get(url, headers=headers, timeout=5)
+        # Busca os dados no Instagram
+        profile = instaloader.Profile.from_username(insta.context, clean_username)
         
-        if response.status_code == 404:
-            return jsonify({'success': False, 'message': 'Perfil não encontrado.'}), 404
-            
-        html = response.text
-        
-        # Verifica se o Instagram bloqueou e redirecionou para o login
-        if "accounts/login" in response.url or '"Login"' in html and not 'og:description' in html:
-            profile_data = {
-                'username': clean_username,
-                'full_name': f"@{clean_username}",
-                'followers': "Oculto",
-                'profile_pic_url': f"https://ui-avatars.com/api/?name={clean_username}&background=random&color=fff&size=128"
-            }
-            profile_cache[clean_username] = profile_data
-            return jsonify({'success': True, 'data': profile_data})
-
-        # Extração da Foto
-        img_match = re.search(r'<meta property="og:image" content="([^"]+)"', html)
-        profile_pic_url = img_match.group(1) if img_match else f"https://ui-avatars.com/api/?name={clean_username}&background=random&color=fff&size=128"
-        
-        # Extração do Nome
-        title_match = re.search(r'<meta property="og:title" content="([^"]+)"', html)
-        full_name = clean_username
-        if title_match:
-            title_content = title_match.group(1)
-            full_name = title_content.split('(')[0].strip()
-            if not full_name:
-                full_name = clean_username
-                
-        # Extração dos Seguidores
-        desc_match = re.search(r'<meta property="og:description" content="([^"]+)"', html)
-        followers = "Oculto"
-        if desc_match:
-            desc_content = desc_match.group(1)
-            # Tenta capturar o número de seguidores (ex: "1.2M", "1,234", "500K")
-            match_foll = re.match(r'^([\d\.,]+[KkMmBb]?)\s', desc_content)
-            if match_foll:
-                followers = match_foll.group(1)
-            
         profile_data = {
-            'username': clean_username,
-            'full_name': full_name,
-            'followers': followers,
-            'profile_pic_url': profile_pic_url
+            'username': profile.username,
+            'full_name': profile.full_name,
+            'followers': profile.followers,
+            'profile_pic_url': profile.profile_pic_url
         }
         
+        # Salva no cache
         profile_cache[clean_username] = profile_data
+        
         return jsonify({'success': True, 'data': profile_data})
         
+    except instaloader.exceptions.ProfileNotExistsException:
+        return jsonify({'success': False, 'message': 'Perfil não encontrado.'}), 404
     except Exception as e:
-        # Sistema Anti-Falha: Retorna dados genéricos em vez de quebrar o frontend
-        profile_data = {
-            'username': clean_username,
-            'full_name': f"@{clean_username}",
-            'followers': "Oculto",
-            'profile_pic_url': f"https://ui-avatars.com/api/?name={clean_username}&background=random&color=fff&size=128"
-        }
-        return jsonify({'success': True, 'data': profile_data})
+        return jsonify({'success': False, 'message': 'Erro ao buscar dados do Instagram.'}), 500
 # -------------------------------------------------------------------
 
 @app.route('/api/get_ranking', methods=['POST'])
