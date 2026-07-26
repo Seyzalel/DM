@@ -94,8 +94,10 @@ def api_login():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    username = session.get('username', 'Usuário')
-    return render_template('dashboard.html', username=username)
+    user = users_db.find_one({"_id": ObjectId(session['user_id'])})
+    plan = user.get('plan', 'standard') if user else 'standard'
+    username = user.get('username', session.get('username', 'Usuário')) if user else 'Usuário'
+    return render_template('dashboard.html', username=username, plan=plan)
 
 @app.route('/plans')
 @login_required
@@ -197,6 +199,57 @@ def check_status(tx_hash):
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/get_ranking', methods=['POST'])
+@login_required
+def get_ranking():
+    user = users_db.find_one({"_id": ObjectId(session['user_id'])})
+    
+    if not user or user.get('plan') != 'unlimited':
+        return jsonify({'success': False, 'message': 'Acesso negado. Plano incompatível.'}), 403
+        
+    data = request.get_json()
+    count = data.get('count', 10)
+    
+    dummy_dm_list = [
+        {"username": "@sofia.martins", "preview": "Visualizado há 5m", "avatarBg": "#E57399"},
+        {"username": "@lucas_oliveira", "preview": "Mensagem enviada...", "avatarBg": "#64B5F6"},
+        {"username": "@ana.beatriz", "preview": "Áudio (0:15)", "avatarBg": "#81C784"},
+        {"username": "@pedro_henrique22", "preview": "Você viu a nova atualização?", "avatarBg": "#FFB74D"},
+        {"username": "@marina_costa", "preview": "Quando nos encontramos?", "avatarBg": "#BA68C8"},
+        {"username": "@gabriel.santos", "preview": "Reunião amanhã às 10h", "avatarBg": "#4DB6AC"},
+        {"username": "@julia_fernandes", "preview": "Amei a foto nova!", "avatarBg": "#E0A0A0"},
+        {"username": "@rafael.almeida", "preview": "Preciso falar com você urgente", "avatarBg": "#90A4AE"},
+        {"username": "@camila_rodrigues", "preview": "Obrigada pelo apoio!", "avatarBg": "#F48FB1"},
+        {"username": "@thiago_silva", "preview": "Bora treinar hoje?", "avatarBg": "#A1887F"},
+        {"username": "@isabela_lima", "preview": "Saudades!", "avatarBg": "#CE93D8"},
+        {"username": "@bruno_carvalho", "preview": "Manda o áudio que eu explico", "avatarBg": "#FF8A65"},
+        {"username": "@larissa_souza", "preview": "Confirma presença no evento?", "avatarBg": "#4FC3F7"},
+        {"username": "@felipe_azevedo", "preview": "O contrato está pronto", "avatarBg": "#AED581"},
+        {"username": "@amanda_rocha", "preview": "Vamos no cinema sábado?", "avatarBg": "#FFD54F"},
+        {"username": "@ricardo_melo", "preview": "Dá uma olhada nesse link", "avatarBg": "#7986CB"},
+        {"username": "@patricia_nunes", "preview": "Parabéns pelo seu dia!", "avatarBg": "#E57373"},
+        {"username": "@diego_oliver", "preview": "Tô te esperando", "avatarBg": "#4DD0E1"},
+        {"username": "@vanessa_costa", "preview": "Adorei a receita", "avatarBg": "#F06292"},
+        {"username": "@marcos_paulo", "preview": "Me liga quando der", "avatarBg": "#81D4FA"},
+        {"username": "@beatriz_carvalho", "preview": "Você está bem?", "avatarBg": "#FFF176"},
+        {"username": "@leandro_dias", "preview": "Amanhã tem reunião", "avatarBg": "#B0BEC5"},
+        {"username": "@tamires_gomes", "preview": "Olha o que eu achei", "avatarBg": "#FFAB91"},
+        {"username": "@everton_ribeiro", "preview": "E aí, beleza?", "avatarBg": "#69F0AE"},
+        {"username": "@priscila_mendes", "preview": "Saudades de você", "avatarBg": "#EA80FC"},
+        {"username": "@henrique_barbosa", "preview": "Manda o endereço", "avatarBg": "#8C9EFF"},
+        {"username": "@carolina_freitas", "preview": "Que foto linda!", "avatarBg": "#FF80AB"},
+        {"username": "@vinicius_campos", "preview": "Vamos jogar online?", "avatarBg": "#B388FF"},
+        {"username": "@alice_nascimento", "preview": "Te mandei um e-mail", "avatarBg": "#82B1FF"},
+        {"username": "@roberto_teixeira", "preview": "Fechou o negócio?", "avatarBg": "#FF9E80"}
+    ]
+    
+    try:
+        count_int = int(count)
+        selected_dms = dummy_dm_list[:count_int]
+        return jsonify({'success': True, 'data': selected_dms})
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Quantidade inválida.'}), 400
 
 @app.route('/logout')
 def logout():
