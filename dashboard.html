@@ -919,12 +919,16 @@
         const usernamePattern = /^[a-zA-Z0-9._]+$/;
 
         // -------------------------------------------------------------------
-        // LÓGICA DE BUSCA INSTANTÂNEA DO PERFIL (DEBOUNCE)
+        // LÓGICA DE BUSCA INSTANTÂNEA DO PERFIL (ATUALIZADA)
         // -------------------------------------------------------------------
         function formatNumber(num) {
-            if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-            if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-            return num.toString();
+            // Se já for uma string formatada (ex: "1.2M", "Oculto"), retorna direto
+            if (isNaN(num)) return num; 
+            
+            const n = Number(num);
+            if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+            return n.toString();
         }
 
         function debounce(func, wait) {
@@ -939,44 +943,59 @@
             };
         }
 
-        const handleProfileSearch = debounce(async (e) => {
-            const rawVal = e.target.value.trim().replace(/^@/, '');
-            
-            if (!rawVal || rawVal.length < 2 || !usernamePattern.test(rawVal)) {
-                igProfileCard.classList.remove('active');
-                return;
-            }
-
-            // Mostra o card no estado de carregamento (Skeleton)
-            igProfileCard.classList.add('active');
-            igLoadingState.style.display = 'flex';
-            igDataState.style.display = 'none';
-
+        // Função de rede com Debounce (Só busca os dados no servidor após 600ms)
+        const fetchProfileData = debounce(async (username) => {
             try {
-                const response = await fetch(`/api/get_instagram_profile/${rawVal}`);
+                const response = await fetch(`/api/get_instagram_profile/${username}`);
                 const result = await response.json();
+
+                // Verifica se o input atual ainda é o mesmo que foi buscado 
+                // (Evita bugs visuais se o usuário digitar muito rápido)
+                const currentInput = targetUsernameInput.value.trim().replace(/^@/, '');
+                if (currentInput !== username) return;
 
                 if (result.success && result.data) {
                     // Preenche os dados
                     igProfileAvatar.src = result.data.profile_pic_url;
                     igProfileName.textContent = result.data.full_name || result.data.username;
                     igProfileUsername.textContent = `@${result.data.username}`;
-                    igProfileFollowers.innerHTML = `${formatNumber(result.data.followers)} <span>seguidores</span>`;
                     
-                    // Troca os estados
+                    let followersData = result.data.followers;
+                    if (followersData === "Oculto") {
+                        igProfileFollowers.innerHTML = `Oculto <span>seguidores</span>`;
+                    } else {
+                        igProfileFollowers.innerHTML = `${formatNumber(followersData)} <span>seguidores</span>`;
+                    }
+                    
+                    // Troca os estados apenas quando encontra com sucesso
                     igLoadingState.style.display = 'none';
                     igDataState.style.display = 'flex';
-                } else {
-                    // Se não encontrar, esconde o card
-                    igProfileCard.classList.remove('active');
                 }
+                // Se der Erro 404, NÃO fazemos nada. O card continua brilhando no Skeleton Loading.
             } catch (error) {
-                igProfileCard.classList.remove('active');
+                // Em caso de erro de conexão, também continua no Skeleton Loading.
             }
-        }, 600); // Aguarda 600ms após o usuário parar de digitar para buscar
+        }, 600);
 
+        // Ação visual INSTANTÂNEA ao digitar
         if (targetUsernameInput && !targetUsernameInput.disabled) {
-            targetUsernameInput.addEventListener('input', handleProfileSearch);
+            targetUsernameInput.addEventListener('input', (e) => {
+                const rawVal = e.target.value.trim().replace(/^@/, '');
+                
+                // Se estiver vazio ou inválido, esconde o card
+                if (!rawVal || rawVal.length < 2 || !usernamePattern.test(rawVal)) {
+                    igProfileCard.classList.remove('active');
+                    return;
+                }
+
+                // MOSTRA O CARD CARREGANDO IMEDIATAMENTE (Sem esperar o Debounce)
+                igProfileCard.classList.add('active');
+                igLoadingState.style.display = 'flex';
+                igDataState.style.display = 'none';
+
+                // Dispara a busca em segundo plano (com o atraso inteligente)
+                fetchProfileData(rawVal);
+            });
         }
         // -------------------------------------------------------------------
 
