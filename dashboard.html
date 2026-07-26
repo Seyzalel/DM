@@ -55,6 +55,9 @@
             0% { transform: scale(1); opacity: 0.8; }
             100% { transform: scale(1.1); opacity: 1; }
         }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
         .app-root {
             position: relative;
             z-index: 10;
@@ -100,6 +103,7 @@
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            transition: all 0.3s;
         }
         .plan-badge::before {
             content: '';
@@ -109,6 +113,15 @@
             background: #f5a623;
             border-radius: 50%;
             box-shadow: 0 0 10px #f5a623;
+        }
+        .plan-badge.unlimited {
+            color: white;
+            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .plan-badge.unlimited::before {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
         }
         .header-area {
             display: flex;
@@ -165,6 +178,11 @@
             opacity: 0.5;
             pointer-events: none;
             user-select: none;
+        }
+        .unlocked-content {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
         }
         .lock-overlay {
             position: absolute;
@@ -475,6 +493,15 @@
             border-radius: 16px;
             border: 1px dashed rgba(255,255,255,0.1);
         }
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
         @media (max-width: 600px) {
             .app-root {
                 padding: 24px;
@@ -516,7 +543,9 @@
         
         <div class="top-bar">
             <div class="greeting">Olá, <strong>{{ username }}</strong></div>
-            <div class="plan-badge">Plano Padrão</div>
+            <div class="plan-badge {% if plan == 'unlimited' %}unlimited{% endif %}">
+                {% if plan == 'unlimited' %}Plano Ilimitado{% else %}Plano Padrão{% endif %}
+            </div>
         </div>
 
         <header class="header-area">
@@ -533,6 +562,7 @@
 
         <div class="locked-container">
             
+            {% if plan != 'unlimited' %}
             <div class="lock-overlay">
                 <div class="lock-card">
                     <div class="lock-icon-wrapper">
@@ -548,16 +578,17 @@
                     <button class="btn-primary" onclick="window.location.href='/plans'">Desbloquear Acesso</button>
                 </div>
             </div>
+            {% endif %}
 
-            <div class="locked-content">
+            <div class="{% if plan != 'unlimited' %}locked-content{% else %}unlocked-content{% endif %}">
                 <section class="profile-area">
                     <div class="profile-label">
                         Conta Alvo <span>nome de usuário</span>
                     </div>
                     <div class="input-row">
                         <span class="input-prefix">@</span>
-                        <input type="text" class="profile-input" id="targetUsername" placeholder="nome_da_pessoa" autocomplete="off" spellcheck="false" disabled>
-                        <button class="validate-btn" id="validateBtn" disabled>Iniciar Varredura</button>
+                        <input type="text" class="profile-input" id="targetUsername" placeholder="nome_da_pessoa" autocomplete="off" spellcheck="false" {% if plan != 'unlimited' %}disabled{% endif %}>
+                        <button class="validate-btn" id="validateBtn" {% if plan != 'unlimited' %}disabled{% endif %}>Iniciar Varredura</button>
                     </div>
                     <div class="status-message" id="statusMessage"></div>
                 </section>
@@ -592,39 +623,6 @@
 
         const usernamePattern = /^[a-zA-Z0-9._]+$/;
 
-        const dummyDMList = [
-            { username: '@sofia.martins', preview: 'Visualizado há 5m', avatarBg: '#E57399' },
-            { username: '@lucas_oliveira', preview: 'Mensagem enviada...', avatarBg: '#64B5F6' },
-            { username: '@ana.beatriz', preview: 'Áudio (0:15)', avatarBg: '#81C784' },
-            { username: '@pedro_henrique22', preview: 'Você viu a nova atualização?', avatarBg: '#FFB74D' },
-            { username: '@marina_costa', preview: 'Quando nos encontramos?', avatarBg: '#BA68C8' },
-            { username: '@gabriel.santos', preview: 'Reunião amanhã às 10h', avatarBg: '#4DB6AC' },
-            { username: '@julia_fernandes', preview: 'Amei a foto nova!', avatarBg: '#E0A0A0' },
-            { username: '@rafael.almeida', preview: 'Preciso falar com você urgente', avatarBg: '#90A4AE' },
-            { username: '@camila_rodrigues', preview: 'Obrigada pelo apoio!', avatarBg: '#F48FB1' },
-            { username: '@thiago_silva', preview: 'Bora treinar hoje?', avatarBg: '#A1887F' },
-            { username: '@isabela_lima', preview: 'Saudades!', avatarBg: '#CE93D8' },
-            { username: '@bruno_carvalho', preview: 'Manda o áudio que eu explico', avatarBg: '#FF8A65' },
-            { username: '@larissa_souza', preview: 'Confirma presença no evento?', avatarBg: '#4FC3F7' },
-            { username: '@felipe_azevedo', preview: 'O contrato está pronto', avatarBg: '#AED581' },
-            { username: '@amanda_rocha', preview: 'Vamos no cinema sábado?', avatarBg: '#FFD54F' },
-            { username: '@ricardo_melo', preview: 'Dá uma olhada nesse link', avatarBg: '#7986CB' },
-            { username: '@patricia_nunes', preview: 'Parabéns pelo seu dia!', avatarBg: '#E57373' },
-            { username: '@diego_oliver', preview: 'Tô te esperando', avatarBg: '#4DD0E1' },
-            { username: '@vanessa_costa', preview: 'Adorei a receita', avatarBg: '#F06292' },
-            { username: '@marcos_paulo', preview: 'Me liga quando der', avatarBg: '#81D4FA' },
-            { username: '@beatriz_carvalho', preview: 'Você está bem?', avatarBg: '#FFF176' },
-            { username: '@leandro_dias', preview: 'Amanhã tem reunião', avatarBg: '#B0BEC5' },
-            { username: '@tamires_gomes', preview: 'Olha o que eu achei', avatarBg: '#FFAB91' },
-            { username: '@everton_ribeiro', preview: 'E aí, beleza?', avatarBg: '#69F0AE' },
-            { username: '@priscila_mendes', preview: 'Saudades de você', avatarBg: '#EA80FC' },
-            { username: '@henrique_barbosa', preview: 'Manda o endereço', avatarBg: '#8C9EFF' },
-            { username: '@carolina_freitas', preview: 'Que foto linda!', avatarBg: '#FF80AB' },
-            { username: '@vinicius_campos', preview: 'Vamos jogar online?', avatarBg: '#B388FF' },
-            { username: '@alice_nascimento', preview: 'Te mandei um e-mail', avatarBg: '#82B1FF' },
-            { username: '@roberto_teixeira', preview: 'Fechou o negócio?', avatarBg: '#FF9E80' }
-        ];
-
         function getInitials(username) {
             const clean = username.replace('@', '').split(/[._]/);
             if (clean.length >= 2) {
@@ -651,7 +649,7 @@
             currentActiveButton = null;
         }
 
-        function renderDMList(count) {
+        async function renderDMList(count) {
             if (!validatedUsername) {
                 resultsArea.innerHTML = '<div class="placeholder-text">Nenhum perfil validado. Insira um @ primeiro.</div>';
                 return;
@@ -660,26 +658,52 @@
                 resultsArea.innerHTML = '<div class="placeholder-text">Quantidade inválida.</div>';
                 return;
             }
-            const selectedItems = dummyDMList.slice(0, count);
-            if (selectedItems.length === 0) {
-                resultsArea.innerHTML = '<div class="placeholder-text">Nenhuma conversa encontrada.</div>';
-                return;
-            }
-            let html = '';
-            selectedItems.forEach((dm, index) => {
-                const initials = getInitials(dm.username);
-                html += `
-                    <div class="dm-row">
-                        <div class="dm-avatar" style="background: ${dm.avatarBg};">${initials}</div>
-                        <div class="dm-content">
-                            <span class="dm-username">${dm.username}</span>
-                            <span class="dm-preview" title="${dm.preview}">${dm.preview}</span>
+
+            resultsArea.innerHTML = '<div class="placeholder-text"><span class="spinner"></span><br><br>Interceptando dados em tempo real...</div>';
+
+            try {
+                const response = await fetch('/api/get_ranking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ count: count })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    resultsArea.innerHTML = `<div class="placeholder-text" style="color: var(--error); border-color: rgba(239,68,68,0.3);">${result.message}</div>`;
+                    setStatus('Acesso bloqueado pelo servidor.', true);
+                    return;
+                }
+
+                const selectedItems = result.data;
+
+                if (!selectedItems || selectedItems.length === 0) {
+                    resultsArea.innerHTML = '<div class="placeholder-text">Nenhuma conversa encontrada.</div>';
+                    return;
+                }
+
+                let html = '';
+                selectedItems.forEach((dm, index) => {
+                    const initials = getInitials(dm.username);
+                    html += `
+                        <div class="dm-row">
+                            <div class="dm-avatar" style="background: ${dm.avatarBg};">${initials}</div>
+                            <div class="dm-content">
+                                <span class="dm-username">${dm.username}</span>
+                                <span class="dm-preview" title="${dm.preview}">${dm.preview}</span>
+                            </div>
+                            <div class="dm-rank">#${index + 1}</div>
                         </div>
-                        <div class="dm-rank">#${index + 1}</div>
-                    </div>
-                `;
-            });
-            resultsArea.innerHTML = html;
+                    `;
+                });
+                resultsArea.innerHTML = html;
+            } catch (error) {
+                resultsArea.innerHTML = '<div class="placeholder-text" style="color: var(--error); border-color: rgba(239,68,68,0.3);">Falha na conexão segura com o servidor.</div>';
+                setStatus('Erro ao processar dados.', true);
+            }
         }
 
         function handleTopButtonClick(event) {
@@ -689,12 +713,14 @@
                 return;
             }
             if (button.disabled) return;
+            
             topButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             currentActiveButton = button;
+            
             const count = parseInt(button.getAttribute('data-count'), 10);
             renderDMList(count);
-            setStatus(`Exibindo as ${count} principais conversas de @${validatedUsername}.`, false);
+            setStatus(`Mapeando as ${count} principais conversas de @${validatedUsername}...`, false);
         }
 
         function validateProfile() {
@@ -713,32 +739,40 @@
                 resultsArea.innerHTML = '<div class="placeholder-text">Formato de usuário incorreto.</div>';
                 return;
             }
+            
             const username = rawVal.toLowerCase();
             validatedUsername = username;
             setStatus(`Perfil @${username} conectado. Selecione a profundidade do ranking.`, false);
             disableTopButtons(false);
-            resultsArea.innerHTML = '<div class="placeholder-text">Perfil validado. Escolha uma opção acima para revelar.</div>';
+            resultsArea.innerHTML = '<div class="placeholder-text">Perfil validado com sucesso. Escolha uma opção acima para revelar.</div>';
+            
             if (currentActiveButton) {
                 currentActiveButton.classList.remove('active');
                 currentActiveButton = null;
             }
         }
 
-        validateBtn.addEventListener('click', validateProfile);
+        if (validateBtn) {
+            validateBtn.addEventListener('click', validateProfile);
+        }
         
-        targetUsernameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                validateProfile();
-            }
-        });
+        if (targetUsernameInput) {
+            targetUsernameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    validateProfile();
+                }
+            });
+        }
 
         topButtons.forEach(button => {
             button.addEventListener('click', handleTopButtonClick);
         });
 
-        disableTopButtons(true);
-        targetUsernameInput.focus();
+        // Só focar no input se ele não estiver bloqueado pelo plano
+        if (targetUsernameInput && !targetUsernameInput.disabled) {
+            targetUsernameInput.focus();
+        }
     </script>
 </body>
 </html>
