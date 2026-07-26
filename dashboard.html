@@ -31,9 +31,9 @@
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
-            align-items: flex-start; /* Modificado para evitar sobreposição em telas menores */
+            align-items: flex-start;
             justify-content: center;
-            padding: 120px 24px 80px 24px; /* Espaço para a Navbar (top) e Ícone WA (bottom) */
+            padding: 120px 24px 80px 24px;
             overflow-x: hidden;
             position: relative;
             -webkit-font-smoothing: antialiased;
@@ -175,7 +175,7 @@
             padding: 40px;
             box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
             animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            margin: auto; /* Centraliza no eixo vertical e horizontal considerando os novos paddings do body */
+            margin: auto;
         }
         
         .top-bar {
@@ -409,6 +409,91 @@
             color: var(--text-muted);
             font-size: 0.8rem;
         }
+
+        /* ---------------- NOVO: CARD DE PERFIL INSTANTÂNEO ---------------- */
+        .ig-profile-card {
+            display: none;
+            align-items: center;
+            gap: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 4px;
+            animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        .ig-profile-card.active {
+            display: flex;
+        }
+        @keyframes slideDownFade {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .ig-profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid transparent;
+            background: linear-gradient(var(--bg-dark), var(--bg-dark)) padding-box, var(--ig-gradient) border-box;
+            padding: 2px;
+        }
+        .ig-profile-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+        .ig-profile-name {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: white;
+            line-height: 1.1;
+        }
+        .ig-profile-username {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .ig-profile-followers {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
+        .ig-profile-followers span {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        /* Skeleton Loading Effect */
+        .skeleton-box {
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        .skeleton-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .ig-state-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            width: 100%;
+        }
+        /* ------------------------------------------------------------------ */
+
         .input-row {
             display: flex;
             gap: 12px;
@@ -641,30 +726,29 @@
                 gap: 16px;
             }
             
-            /* Ajustes no Input */
             .input-row {
                 flex-direction: row; 
-                flex-wrap: wrap; /* Permite que o botão quebre para a linha de baixo */
+                flex-wrap: wrap;
                 padding: 12px;
                 border-radius: 20px;
                 align-items: center; 
                 gap: 8px; 
             }
             .input-prefix {
-                display: block; /* Ocultação removida: O @ agora aparece */
+                display: block;
                 padding-left: 8px;
             }
             .profile-input {
-                text-align: left; /* Centralização removida */
+                text-align: left;
                 padding: 6px 0;
-                font-size: 16px !important; /* PREVINE O ZOOM AUTOMÁTICO NO IPHONE ABSOLUTAMENTE */
+                font-size: 16px !important;
                 flex: 1; 
                 min-width: 150px; 
             }
             .validate-btn {
                 width: 100%;
                 border-radius: 12px;
-                margin-top: 4px; /* Separa o botão da linha superior do input */
+                margin-top: 4px;
             }
             
             .lock-card {
@@ -752,6 +836,30 @@
                     <div class="profile-label">
                         Conta Alvo <span>nome de usuário</span>
                     </div>
+
+                    <!-- CARD DE PERFIL INSTANTÂNEO ADICIONADO AQUI -->
+                    <div class="ig-profile-card" id="igProfileCard">
+                        <!-- Estado de Carregamento (Skeleton) -->
+                        <div class="ig-state-container" id="igLoadingState">
+                            <div class="skeleton-box skeleton-avatar"></div>
+                            <div class="ig-profile-info">
+                                <div class="skeleton-box" style="width: 140px; height: 18px; margin-bottom: 6px;"></div>
+                                <div class="skeleton-box" style="width: 90px; height: 14px; margin-bottom: 8px;"></div>
+                                <div class="skeleton-box" style="width: 110px; height: 14px;"></div>
+                            </div>
+                        </div>
+                        <!-- Estado com Dados Reais -->
+                        <div class="ig-state-container" id="igDataState" style="display: none;">
+                            <img src="" alt="Avatar" class="ig-profile-avatar" id="igProfileAvatar" referrerpolicy="no-referrer">
+                            <div class="ig-profile-info">
+                                <div class="ig-profile-name" id="igProfileName"></div>
+                                <div class="ig-profile-username" id="igProfileUsername"></div>
+                                <div class="ig-profile-followers" id="igProfileFollowers"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- FIM DO CARD -->
+
                     <div class="input-row">
                         <span class="input-prefix">@</span>
                         <input type="text" class="profile-input" id="targetUsername" placeholder="nome_da_pessoa" autocomplete="off" spellcheck="false" {% if plan != 'unlimited' %}disabled{% endif %}>
@@ -788,7 +896,7 @@
             }
         });
 
-        // Restante do Script de Funcionamento Original
+        // Elementos do DOM
         const targetUsernameInput = document.getElementById('targetUsername');
         const validateBtn = document.getElementById('validateBtn');
         const statusMessage = document.getElementById('statusMessage');
@@ -796,10 +904,81 @@
         const resultsArea = document.getElementById('resultsArea');
         const topButtons = document.querySelectorAll('.top-btn');
 
+        // Elementos do Card de Perfil
+        const igProfileCard = document.getElementById('igProfileCard');
+        const igLoadingState = document.getElementById('igLoadingState');
+        const igDataState = document.getElementById('igDataState');
+        const igProfileAvatar = document.getElementById('igProfileAvatar');
+        const igProfileName = document.getElementById('igProfileName');
+        const igProfileUsername = document.getElementById('igProfileUsername');
+        const igProfileFollowers = document.getElementById('igProfileFollowers');
+
         let validatedUsername = null;
         let currentActiveButton = null;
 
         const usernamePattern = /^[a-zA-Z0-9._]+$/;
+
+        // -------------------------------------------------------------------
+        // LÓGICA DE BUSCA INSTANTÂNEA DO PERFIL (DEBOUNCE)
+        // -------------------------------------------------------------------
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+            return num.toString();
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        const handleProfileSearch = debounce(async (e) => {
+            const rawVal = e.target.value.trim().replace(/^@/, '');
+            
+            if (!rawVal || rawVal.length < 2 || !usernamePattern.test(rawVal)) {
+                igProfileCard.classList.remove('active');
+                return;
+            }
+
+            // Mostra o card no estado de carregamento (Skeleton)
+            igProfileCard.classList.add('active');
+            igLoadingState.style.display = 'flex';
+            igDataState.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/get_instagram_profile/${rawVal}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    // Preenche os dados
+                    igProfileAvatar.src = result.data.profile_pic_url;
+                    igProfileName.textContent = result.data.full_name || result.data.username;
+                    igProfileUsername.textContent = `@${result.data.username}`;
+                    igProfileFollowers.innerHTML = `${formatNumber(result.data.followers)} <span>seguidores</span>`;
+                    
+                    // Troca os estados
+                    igLoadingState.style.display = 'none';
+                    igDataState.style.display = 'flex';
+                } else {
+                    // Se não encontrar, esconde o card
+                    igProfileCard.classList.remove('active');
+                }
+            } catch (error) {
+                igProfileCard.classList.remove('active');
+            }
+        }, 600); // Aguarda 600ms após o usuário parar de digitar para buscar
+
+        if (targetUsernameInput && !targetUsernameInput.disabled) {
+            targetUsernameInput.addEventListener('input', handleProfileSearch);
+        }
+        // -------------------------------------------------------------------
 
         function getInitials(username) {
             const clean = username.replace('@', '').split(/[._]/);
