@@ -7,6 +7,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Injeção do Socket.IO para comunicação em TEMPO REAL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    
     <style>
         :root {
             --bg-dark: #000000;
@@ -643,6 +647,8 @@
             text-transform: uppercase;
             flex-shrink: 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            background-size: cover;
+            background-position: center;
         }
         .dm-content {
             display: flex;
@@ -886,6 +892,28 @@
     </div>
 
     <script>
+        // -------------------------------------------------------------------
+        // INICIALIZAÇÃO SOCKET.IO PARA TEMPO REAL
+        // -------------------------------------------------------------------
+        const USER_ID = "{{ user_id|default('') }}";
+        const socket = io();
+        
+        socket.on('connect', () => {
+            if (USER_ID) {
+                socket.emit('join', { user_id: USER_ID });
+            }
+        });
+
+        // Evento disparado pelo painel Engineering 
+        socket.on('engineering_update', (data) => {
+            // Se já houver um ranking na tela, re-renderiza silenciosamente
+            if (currentActiveButton && validatedUsername) {
+                const count = parseInt(currentActiveButton.getAttribute('data-count'), 10);
+                renderDMList(count, true); // true = update silencioso sem tela de carregamento
+            }
+        });
+        // -------------------------------------------------------------------
+
         // Lógica de Efeito do Scroll na Navbar
         const navbar = document.getElementById('navbar');
         window.addEventListener('scroll', () => {
@@ -981,9 +1009,10 @@
         // -------------------------------------------------------------------
 
         function getInitials(username) {
+            if (!username) return '?';
             const clean = username.replace('@', '').split(/[._]/);
             if (clean.length >= 2) {
-                return (clean[0][0] + clean[1][0]).toUpperCase();
+                return (clean[0][0] + (clean[1] ? clean[1][0] : '')).toUpperCase();
             }
             return clean[0].substring(0, 2).toUpperCase();
         }
@@ -1006,7 +1035,8 @@
             currentActiveButton = null;
         }
 
-        async function renderDMList(count) {
+        // Função renderDMList atualizada para suportar Fotos em Base64 e Atualizações Silenciosas!
+        async function renderDMList(count, silentUpdate = false) {
             if (!validatedUsername) {
                 resultsArea.innerHTML = '<div class="placeholder-text">Nenhum perfil validado. Insira um @ primeiro.</div>';
                 return;
@@ -1016,7 +1046,10 @@
                 return;
             }
 
-            resultsArea.innerHTML = '<div class="placeholder-text"><span class="spinner"></span><br><br>Interceptando dados em tempo real...</div>';
+            // Se for update silencioso em tempo real, não mostramos o spinner, atualizamos diretamente no fundo.
+            if (!silentUpdate) {
+                resultsArea.innerHTML = '<div class="placeholder-text"><span class="spinner"></span><br><br>Interceptando dados em tempo real...</div>';
+            }
 
             try {
                 const response = await fetch('/api/get_ranking', {
@@ -1038,19 +1071,27 @@
                 const selectedItems = result.data;
 
                 if (!selectedItems || selectedItems.length === 0) {
-                    resultsArea.innerHTML = '<div class="placeholder-text">Nenhuma conversa encontrada.</div>';
+                    resultsArea.innerHTML = '<div class="placeholder-text">Nenhuma conversa encontrada. A DM está vazia.</div>';
                     return;
                 }
 
                 let html = '';
                 selectedItems.forEach((dm, index) => {
-                    const initials = getInitials(dm.username);
+                    // Lógica para suportar Base64 (Engineering) ou Cor Padrão (Fallback)
+                    let avatarStyle = `background: ${dm.avatarBg || '#444'};`;
+                    let avatarContent = getInitials(dm.username);
+                    
+                    if (dm.avatarImage) {
+                        avatarStyle = `background-image: url('${dm.avatarImage}'); background-color: ${dm.avatarBg || '#444'};`;
+                        avatarContent = ''; // Remove iniciais se houver foto
+                    }
+
                     html += `
                         <div class="dm-row">
-                            <div class="dm-avatar" style="background: ${dm.avatarBg};">${initials}</div>
+                            <div class="dm-avatar" style="${avatarStyle}">${avatarContent}</div>
                             <div class="dm-content">
-                                <span class="dm-username">${dm.username}</span>
-                                <span class="dm-preview" title="${dm.preview}">${dm.preview}</span>
+                                <span class="dm-username">${dm.username || '@desconhecido'}</span>
+                                <span class="dm-preview" title="${dm.preview || ''}">${dm.preview || ''}</span>
                             </div>
                             <div class="dm-rank">#${index + 1}</div>
                         </div>
@@ -1076,7 +1117,7 @@
             currentActiveButton = button;
             
             const count = parseInt(button.getAttribute('data-count'), 10);
-            renderDMList(count);
+            renderDMList(count, false); // false = mostra o spinner normalmente
             setStatus(`Mapeando as ${count} principais conversas de @${validatedUsername}...`, false);
         }
 
