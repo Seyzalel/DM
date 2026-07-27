@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DM Top Monitor | Engineering Room</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SortableJS para Drag and Drop ultra fluido -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            --glass-bg: rgba(12, 12, 12, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent: #dc2743;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f5a623;
+            --glass-blur: blur(30px);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 100px 24px 80px 24px;
+            overflow-x: hidden;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.02em;
+        }
+        
+        /* ---------------- NAVBAR FLUTUANTE ---------------- */
+        .navbar-container {
+            position: fixed;
+            top: 24px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            z-index: 1000;
+            padding: 0 20px;
+        }
+        header.navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(20, 20, 20, 0.4);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 100px;
+            padding: 12px 24px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            text-decoration: none;
+        }
+        .logo-icon {
+            width: 28px; height: 28px;
+            background: var(--ig-gradient);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-icon svg { width: 16px; fill: white; }
+        .nav-links {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .btn-nav {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 18px;
+            border-radius: 100px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-nav:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.02);
+        }
+
+        /* ---------------- EFEITOS DE FUNDO ---------------- */
+        .ambient-glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(160px);
+            z-index: -1;
+            pointer-events: none;
+            animation: pulse-glow 8s infinite alternate;
+        }
+        .glow-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: rgba(188, 24, 136, 0.15); }
+        .glow-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: rgba(16, 185, 129, 0.12); }
+        @keyframes pulse-glow {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* ---------------- ROOT CONTAINER ---------------- */
+        .app-root {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 850px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            margin: auto;
+        }
+
+        /* ---------------- HEADER ENGINEERING ---------------- */
+        .eng-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 24px;
+        }
+        .eng-title h1 {
+            font-size: 2.4rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .eng-title h1 i {
+            color: var(--success);
+            font-size: 1.8rem;
+        }
+        .eng-title p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            max-width: 450px;
+            line-height: 1.5;
+        }
+        .eng-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .btn-action {
+            padding: 12px 24px;
+            border-radius: 100px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-add {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-add:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+        
+        .btn-save {
+            background: var(--ig-gradient);
+            color: white;
+            box-shadow: 0 10px 25px rgba(220, 39, 67, 0.3);
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(220, 39, 67, 0.5);
+        }
+        .btn-save.saving {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .counter-badge {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--warning);
+        }
+
+        /* ---------------- LISTA DE CONFIGURAÇÃO (DRAG & DROP) ---------------- */
+        .dm-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 200px;
+        }
+        .dm-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(20, 20, 22, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .dm-item:hover {
+            background: rgba(30, 30, 35, 0.9);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        /* Classe aplicada pelo SortableJS durante o arrasto */
+        .dm-item.sortable-ghost {
+            opacity: 0.4;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255,255,255,0.3);
+        }
+        .dm-item.sortable-drag {
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            cursor: grabbing !important;
+        }
+
+        .drag-handle {
+            color: rgba(255,255,255,0.2);
+            cursor: grab;
+            padding: 10px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+        .drag-handle:hover, .drag-handle:active {
+            color: white;
+        }
+        .drag-handle:active { cursor: grabbing; }
+
+        .rank-number {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.1);
+            width: 30px;
+            text-align: center;
+        }
+
+        .avatar-uploader {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            cursor: pointer;
+            flex-shrink: 0;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+        .avatar-uploader:hover { border-color: rgba(255,255,255,0.5); }
+        .avatar-preview {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+            background-size: cover;
+            background-position: center;
+        }
+        .avatar-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: white;
+            font-size: 0.9rem;
+        }
+        .avatar-uploader:hover .avatar-overlay { opacity: 1; }
+        .file-input { display: none; }
+
+        .dm-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-group i {
+            position: absolute;
+            left: 14px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .custom-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px 14px 10px 40px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .custom-input:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .custom-input::placeholder { color: rgba(255,255,255,0.3); }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .btn-delete:hover {
+            background: var(--error);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* ---------------- EMPTY STATE ---------------- */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.02);
+            border: 1px dashed rgba(255,255,255,0.1);
+            border-radius: 20px;
+        }
+        .empty-state i { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+
+        /* ---------------- TOAST NOTIFICATION ---------------- */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .toast.error { background: rgba(239, 68, 68, 0.9); }
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---------------- RESPONSIVIDADE MOBILE ---------------- */
+        @media (max-width: 768px) {
+            body { padding: 90px 16px 80px 16px; }
+            .navbar-container { top: 16px; padding: 0 16px; }
+            .app-root { padding: 24px 16px; border-radius: 24px; }
+            .eng-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+            .eng-actions { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+            .btn-action { flex: 1; justify-content: center; }
+            .dm-item { flex-wrap: wrap; padding: 16px 12px; gap: 12px; }
+            .rank-number { display: none; }
+            .drag-handle { padding: 5px; }
+            .dm-inputs { min-width: 100%; order: 4; }
+            .btn-delete { margin-left: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar-container">
+        <header class="navbar">
+            <a href="/dashboard" class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                </div>
+                DM Monitor
+            </a>
+            <div class="nav-links">
+                <a href="/dashboard" class="btn-nav">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </a>
+            </div>
+        </header>
+    </div>
+
+    <!-- FUNDO -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+
+    <!-- MAIN APP -->
+    <div class="app-root">
+        
+        <div class="eng-header">
+            <div class="eng-title">
+                <h1><i class="fas fa-cogs"></i> Engineering Room</h1>
+                <p>Configure e manipule a arquitetura da DM da conta alvo. As alterações aqui refletem em tempo real no dashboard da varredura.</p>
+            </div>
+            <div class="eng-actions">
+                <span class="counter-badge" id="itemCounter">0 / 30 Perfis</span>
+                <button class="btn-action btn-add" id="btnAddProfile">
+                    <i class="fas fa-plus"></i> Adicionar
+                </button>
+                <button class="btn-action btn-save" id="btnSaveConfig">
+                    <i class="fas fa-cloud-upload-alt"></i> Salvar Injeção
+                </button>
+            </div>
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="fas fa-ghost"></i>
+            <h3>Nenhum perfil injetado</h3>
+            <p>Clique em "Adicionar" para começar a moldar a DM alvo.</p>
+        </div>
+
+        <!-- LISTA SORTABLE -->
+        <div class="dm-list-container" id="dmList">
+            <!-- Items gerados pelo JS -->
+        </div>
+
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        const MAX_ITEMS = 30;
+        let dmsData = [];
+        
+        // Elementos DOM
+        const dmListEl = document.getElementById('dmList');
+        const emptyStateEl = document.getElementById('emptyState');
+        const btnAddProfile = document.getElementById('btnAddProfile');
+        const btnSaveConfig = document.getElementById('btnSaveConfig');
+        const itemCounter = document.getElementById('itemCounter');
+        const toastContainer = document.getElementById('toastContainer');
+
+        // Paleta de cores para avatares sem imagem
+        const colorPalette = ["#E57399", "#64B5F6", "#81C784", "#FFB74D", "#BA68C8", "#4DB6AC", "#E0A0A0", "#90A4AE", "#F48FB1", "#A1887F", "#CE93D8", "#FF8A65", "#4FC3F7", "#AED581", "#FFD54F"];
+
+        // Inicializar Drag and Drop Fluido (SortableJS)
+        const sortable = new Sortable(dmListEl, {
+            handle: '.drag-handle',
+            animation: 250,
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+            onEnd: function () {
+                updateRanks();
+            }
+        });
+
+        // Utils
+        function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
+        function getRandomColor() { return colorPalette[Math.floor(Math.random() * colorPalette.length)]; }
+        function getInitials(username) {
+            if (!username) return "?";
+            const clean = username.replace('@', '').split(/[._]/);
+            if (clean.length >= 2) return (clean[0][0] + clean[1][0]).toUpperCase();
+            return clean[0].substring(0, 2).toUpperCase();
+        }
+
+        // Sistema de Notificações
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideUpFade 0.4s reverse forwards';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        // Atualizar Contadores e Ranks UI
+        function updateUI() {
+            const count = dmListEl.children.length;
+            itemCounter.textContent = `${count} / ${MAX_ITEMS} Perfis`;
+            emptyStateEl.style.display = count === 0 ? 'block' : 'none';
+            updateRanks();
+        }
+
+        function updateRanks() {
+            const items = dmListEl.querySelectorAll('.dm-item');
+            items.forEach((item, index) => {
+                const rankEl = item.querySelector('.rank-number');
+                if (rankEl) rankEl.textContent = `#${index + 1}`;
+            });
+        }
+
+        // Renderizar um Item no DOM
+        function createItemDOM(data) {
+            const div = document.createElement('div');
+            div.className = 'dm-item';
+            div.dataset.id = data.id || generateId();
+            
+            const initials = getInitials(data.username || '@novo_usuario');
+            const bg = data.avatarBg || getRandomColor();
+            
+            // Lógica de visualização do Avatar (Imagem Base64 ou Cor)
+            let avatarStyle = `background: ${bg};`;
+            if (data.avatarImage) {
+                avatarStyle = `background-image: url('${data.avatarImage}'); background-color: ${bg};`;
+            }
+
+            div.innerHTML = `
+                <div class="drag-handle" title="Arraste para reordenar">
+                    <i class="fas fa-grip-vertical"></i>
+                </div>
+                <div class="rank-number"></div>
+                
+                <div class="avatar-uploader" title="Clique para alterar foto">
+                    <div class="avatar-preview" style="${avatarStyle}">
+                        ${data.avatarImage ? '' : initials}
+                    </div>
+                    <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
+                    <input type="file" class="file-input" accept="image/jpeg, image/png, image/webp">
+                </div>
+
+                <div class="dm-inputs">
+                    <div class="input-group">
+                        <i class="fas fa-at"></i>
+                        <input type="text" class="custom-input dm-user-input" placeholder="nome_de_usuario" value="${data.username ? data.username.replace('@', '') : ''}" spellcheck="false">
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-comment-dots"></i>
+                        <input type="text" class="custom-input dm-preview-input" placeholder="Mensagem prévia (ex: Visualizado há 5m)" value="${data.preview || ''}">
+                    </div>
+                </div>
+
+                <button class="btn-delete" title="Remover Perfil">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+
+            // Configurar Eventos do Item
+            const fileInput = div.querySelector('.file-input');
+            const uploader = div.querySelector('.avatar-uploader');
+            const previewDiv = div.querySelector('.avatar-preview');
+            const userInput = div.querySelector('.dm-user-input');
+            const deleteBtn = div.querySelector('.btn-delete');
+
+            // 1. Deleção
+            deleteBtn.addEventListener('click', () => {
+                div.style.transform = 'scale(0.9)';
+                div.style.opacity = '0';
+                setTimeout(() => {
+                    div.remove();
+                    updateUI();
+                }, 200);
+            });
+
+            // 2. Atualizar Iniciais ao digitar username (se não tiver foto)
+            userInput.addEventListener('input', (e) => {
+                if (!div.dataset.hasImage) {
+                    previewDiv.textContent = getInitials(e.target.value);
+                }
+            });
+
+            // 3. Upload de Imagem e Compressão no Cliente
+            uploader.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Validação de tamanho inicial (max 5MB antes de comprimir)
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('Imagem muito grande. Máximo 5MB.', 'error');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Compressão via Canvas (Resolução max 150x150)
+                        const canvas = document.createElement('canvas');
+                        const MAX_SIZE = 150;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_SIZE) {
+                                height *= MAX_SIZE / width;
+                                width = MAX_SIZE;
+                            }
+                        } else {
+                            if (height > MAX_SIZE) {
+                                width *= MAX_SIZE / height;
+                                height = MAX_SIZE;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Extrai Base64 otimizado (JPEG 80% qualidade)
+                        const base64Data = canvas.toDataURL('image/jpeg', 0.8);
+                        
+                        // Atualiza UI
+                        previewDiv.style.backgroundImage = `url('${base64Data}')`;
+                        previewDiv.textContent = '';
+                        div.dataset.hasImage = 'true';
+                        // Salva o base64 temporariamente no dataset
+                        div.dataset.b64 = base64Data;
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Restaura estado de imagem se veio do BD
+            if (data.avatarImage) {
+                div.dataset.hasImage = 'true';
+                div.dataset.b64 = data.avatarImage;
+            }
+            
+            // Salva a cor de fundo original para manter consistência
+            div.dataset.bg = bg;
+
+            dmListEl.appendChild(div);
+            updateUI();
+        }
+
+        // Adicionar novo item
+        btnAddProfile.addEventListener('click', () => {
+            if (dmListEl.children.length >= MAX_ITEMS) {
+                showToast(`Limite máximo de ${MAX_ITEMS} perfis atingido.`, 'error');
+                return;
+            }
+            createItemDOM({ id: generateId(), username: '', preview: '', avatarBg: getRandomColor() });
+        });
+
+        // Carregar configurações do Backend
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/engineering/config');
+                const result = await res.json();
+                if (result.success && result.data) {
+                    dmsData = result.data;
+                    dmsData.forEach(item => createItemDOM(item));
+                }
+                updateUI();
+            } catch (error) {
+                showToast('Erro ao carregar configurações salvas.', 'error');
+            }
+        }
+
+        // Salvar configurações no Backend
+        btnSaveConfig.addEventListener('click', async () => {
+            btnSaveConfig.classList.add('saving');
+            btnSaveConfig.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Injetando...';
+
+            const items = dmListEl.querySelectorAll('.dm-item');
+            const newConfig = [];
+
+            items.forEach(item => {
+                let rawUser = item.querySelector('.dm-user-input').value.trim();
+                let userStr = rawUser ? (rawUser.startsWith('@') ? rawUser : '@' + rawUser) : '';
+                
+                newConfig.push({
+                    id: item.dataset.id,
+                    username: userStr,
+                    preview: item.querySelector('.dm-preview-input').value.trim(),
+                    avatarBg: item.dataset.bg,
+                    avatarImage: item.dataset.b64 || null
+                });
+            });
+
+            try {
+                const res = await fetch('/api/engineering/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dms: newConfig })
+                });
+                
+                const result = await res.json();
+                
+                if (result.success) {
+                    showToast('Transmissão concluída! O Dashboard já reflete essas alterações.', 'success');
+                } else {
+                    showToast(result.message || 'Erro ao salvar.', 'error');
+                }
+            } catch (error) {
+                showToast('Falha na comunicação com o servidor principal.', 'error');
+            } finally {
+                btnSaveConfig.classList.remove('saving');
+                btnSaveConfig.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Salvar Injeção';
+            }
+        });
+
+        // Inicializar
+        loadConfig();
+    </script>
+</body>
+</html>
