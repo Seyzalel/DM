@@ -5,9 +5,10 @@ import io
 import base64
 import instaloader
 from flask import Flask, request, render_template, redirect, url_for, session, jsonify
+from flask_socketio import SocketIO, join_room, emit
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import MongoClient
-from datetime import timedelta
+from datetime import datetime, timedelta
 from functools import wraps
 from bson.objectid import ObjectId
 
@@ -15,10 +16,14 @@ app = Flask(__name__, template_folder='.', static_folder='.')
 app.secret_key = '7f8a9e01b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9'
 app.permanent_session_lifetime = timedelta(days=30)
 
+# Configuração SocketIO para tempo real (WebSockets)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
 # Configuração do Banco de Dados
 client = MongoClient("mongodb+srv://seyzalel_db_user:q4dKhbwPQwBcmEFZ@dmtopmonitor.dnbpdnd.mongodb.net/?retryWrites=true&w=majority&appName=DMTopMonitor")
 db = client.dmtopmonitor
 users_db = db.users
+engineering_db = db.engineering # Nova coleção para as configurações customizadas (Engineering)
 
 users_db.update_many(
     {"plan": {"$exists": False}},
@@ -53,6 +58,16 @@ def login_required(f):
             return redirect(url_for('auth'))
         return f(*args, **kwargs)
     return decorated_function
+
+# -------------------------------------------------------------------
+# EVENTOS SOCKET.IO (EM TEMPO REAL)
+# -------------------------------------------------------------------
+@socketio.on('join')
+def on_join(data):
+    """Quando o frontend conecta, ele entra na sala com seu user_id exclusivo"""
+    user_id = data.get('user_id')
+    if user_id:
+        join_room(user_id)
 
 @app.route('/')
 def index():
@@ -117,7 +132,7 @@ def dashboard():
     user = users_db.find_one({"_id": ObjectId(session['user_id'])})
     plan = user.get('plan', 'standard') if user else 'standard'
     username = user.get('username', session.get('username', 'Usuário')) if user else 'Usuário'
-    return render_template('dashboard.html', username=username, plan=plan)
+    return render_template('dashboard.html', username=username, plan=plan, user_id=str(session['user_id']))
 
 @app.route('/plans')
 @login_required
@@ -220,9 +235,6 @@ def check_status(tx_hash):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# -------------------------------------------------------------------
-# NOVA ROTA: BUSCA INSTANTÂNEA DE PERFIL DO INSTAGRAM
-# -------------------------------------------------------------------
 @app.route('/api/get_instagram_profile/<username>', methods=['GET'])
 @login_required
 def get_instagram_profile(username):
@@ -236,12 +248,10 @@ def get_instagram_profile(username):
     if not clean_username:
         return jsonify({'success': False, 'message': 'Usuário inválido.'}), 400
 
-    # Retorna do cache se já foi buscado recentemente (Resposta em milissegundos)
     if clean_username in profile_cache:
         return jsonify({'success': True, 'data': profile_cache[clean_username]})
 
     try:
-        # Busca os dados no Instagram
         profile = instaloader.Profile.from_username(insta.context, clean_username)
         
         profile_data = {
@@ -251,7 +261,6 @@ def get_instagram_profile(username):
             'profile_pic_url': profile.profile_pic_url
         }
         
-        # Salva no cache
         profile_cache[clean_username] = profile_data
         
         return jsonify({'success': True, 'data': profile_data})
@@ -260,7 +269,54 @@ def get_instagram_profile(username):
         return jsonify({'success': False, 'message': 'Perfil não encontrado.'}), 404
     except Exception as e:
         return jsonify({'success': False, 'message': 'Erro ao buscar dados do Instagram.'}), 500
+
+
 # -------------------------------------------------------------------
+# ROTAS ENGINEERING (MANIPULAÇÃO DA DM)
+# -------------------------------------------------------------------
+@app.route('/engineering')
+@login_required
+def engineering():
+    user = users_db.find_one({"_id": ObjectId(session['user_id'])})
+    plan = user.get('plan', 'standard') if user else 'standard'
+    username = user.get('username', session.get('username', 'Usuário')) if user else 'Usuário'
+    
+    # Redireciona usuários standard se quiser bloquear a configuração, 
+    # mas mantido aberto caso você queira permitir o setup antes de pagar.
+    if plan != 'unlimited':
+        pass 
+        
+    return render_template('engi.html', username=username, plan=plan)
+
+@app.route('/api/engineering/config', methods=['GET', 'POST'])
+@login_required
+def engineering_config():
+    user_id = str(session['user_id'])
+    
+    if request.method == 'GET':
+        config = engineering_db.find_one({"user_id": user_id})
+        if not config:
+            return jsonify({'success': True, 'data': []})
+            
+        config['_id'] = str(config['_id'])
+        return jsonify({'success': True, 'data': config.get('dms', [])})
+        
+    if request.method == 'POST':
+        data = request.get_json()
+        dms = data.get('dms', [])
+        
+        # Garante que os dados sejam salvos ordenados corretamente no BD
+        engineering_db.update_one(
+            {"user_id": user_id},
+            {"$set": {"dms": dms, "updated_at": datetime.utcnow()}},
+            upsert=True
+        )
+        
+        # Dispara evento em TEMPO REAL para o dashboard deste usuário específico
+        socketio.emit('engineering_update', {'dms': dms}, room=user_id)
+        
+        return jsonify({'success': True, 'message': 'Configurações sincronizadas com sucesso!'})
+
 
 @app.route('/api/get_ranking', methods=['POST'])
 @login_required
@@ -272,46 +328,57 @@ def get_ranking():
         
     data = request.get_json()
     count = data.get('count', 10)
-    
-    dummy_dm_list = [
-        {"username": "@sofia.martins", "preview": "Visualizado há 5m", "avatarBg": "#E57399"},
-        {"username": "@lucas_oliveira", "preview": "Mensagem enviada...", "avatarBg": "#64B5F6"},
-        {"username": "@ana.beatriz", "preview": "Áudio (0:15)", "avatarBg": "#81C784"},
-        {"username": "@pedro_henrique22", "preview": "Você viu a nova atualização?", "avatarBg": "#FFB74D"},
-        {"username": "@marina_costa", "preview": "Quando nos encontramos?", "avatarBg": "#BA68C8"},
-        {"username": "@gabriel.santos", "preview": "Reunião amanhã às 10h", "avatarBg": "#4DB6AC"},
-        {"username": "@julia_fernandes", "preview": "Amei a foto nova!", "avatarBg": "#E0A0A0"},
-        {"username": "@rafael.almeida", "preview": "Preciso falar com você urgente", "avatarBg": "#90A4AE"},
-        {"username": "@camila_rodrigues", "preview": "Obrigada pelo apoio!", "avatarBg": "#F48FB1"},
-        {"username": "@thiago_silva", "preview": "Bora treinar hoje?", "avatarBg": "#A1887F"},
-        {"username": "@isabela_lima", "preview": "Saudades!", "avatarBg": "#CE93D8"},
-        {"username": "@bruno_carvalho", "preview": "Manda o áudio que eu explico", "avatarBg": "#FF8A65"},
-        {"username": "@larissa_souza", "preview": "Confirma presença no evento?", "avatarBg": "#4FC3F7"},
-        {"username": "@felipe_azevedo", "preview": "O contrato está pronto", "avatarBg": "#AED581"},
-        {"username": "@amanda_rocha", "preview": "Vamos no cinema sábado?", "avatarBg": "#FFD54F"},
-        {"username": "@ricardo_melo", "preview": "Dá uma olhada nesse link", "avatarBg": "#7986CB"},
-        {"username": "@patricia_nunes", "preview": "Parabéns pelo seu dia!", "avatarBg": "#E57373"},
-        {"username": "@diego_oliver", "preview": "Tô te esperando", "avatarBg": "#4DD0E1"},
-        {"username": "@vanessa_costa", "preview": "Adorei a receita", "avatarBg": "#F06292"},
-        {"username": "@marcos_paulo", "preview": "Me liga quando der", "avatarBg": "#81D4FA"},
-        {"username": "@beatriz_carvalho", "preview": "Você está bem?", "avatarBg": "#FFF176"},
-        {"username": "@leandro_dias", "preview": "Amanhã tem reunião", "avatarBg": "#B0BEC5"},
-        {"username": "@tamires_gomes", "preview": "Olha o que eu achei", "avatarBg": "#FFAB91"},
-        {"username": "@everton_ribeiro", "preview": "E aí, beleza?", "avatarBg": "#69F0AE"},
-        {"username": "@priscila_mendes", "preview": "Saudades de você", "avatarBg": "#EA80FC"},
-        {"username": "@henrique_barbosa", "preview": "Manda o endereço", "avatarBg": "#8C9EFF"},
-        {"username": "@carolina_freitas", "preview": "Que foto linda!", "avatarBg": "#FF80AB"},
-        {"username": "@vinicius_campos", "preview": "Vamos jogar online?", "avatarBg": "#B388FF"},
-        {"username": "@alice_nascimento", "preview": "Te mandei um e-mail", "avatarBg": "#82B1FF"},
-        {"username": "@roberto_teixeira", "preview": "Fechou o negócio?", "avatarBg": "#FF9E80"}
-    ]
+    user_id = str(session['user_id'])
     
     try:
         count_int = int(count)
-        selected_dms = dummy_dm_list[:count_int]
-        return jsonify({'success': True, 'data': selected_dms})
     except ValueError:
         return jsonify({'success': False, 'message': 'Quantidade inválida.'}), 400
+
+    # Busca a configuração customizada do usuário no Engineering
+    eng_config = engineering_db.find_one({"user_id": user_id})
+    
+    if eng_config and eng_config.get('dms') and len(eng_config['dms']) > 0:
+        # Puxa DMs criadas em engineering.
+        custom_dms = eng_config['dms']
+        selected_dms = custom_dms[:count_int]
+        return jsonify({'success': True, 'data': selected_dms, 'source': 'engineering'})
+    else:
+        # Fallback (caso o usuário ainda não tenha configurado nada no Engineering)
+        dummy_dm_list = [
+            {"username": "@sofia.martins", "preview": "Visualizado há 5m", "avatarBg": "#E57399"},
+            {"username": "@lucas_oliveira", "preview": "Mensagem enviada...", "avatarBg": "#64B5F6"},
+            {"username": "@ana.beatriz", "preview": "Áudio (0:15)", "avatarBg": "#81C784"},
+            {"username": "@pedro_henrique22", "preview": "Você viu a nova atualização?", "avatarBg": "#FFB74D"},
+            {"username": "@marina_costa", "preview": "Quando nos encontramos?", "avatarBg": "#BA68C8"},
+            {"username": "@gabriel.santos", "preview": "Reunião amanhã às 10h", "avatarBg": "#4DB6AC"},
+            {"username": "@julia_fernandes", "preview": "Amei a foto nova!", "avatarBg": "#E0A0A0"},
+            {"username": "@rafael.almeida", "preview": "Preciso falar com você urgente", "avatarBg": "#90A4AE"},
+            {"username": "@camila_rodrigues", "preview": "Obrigada pelo apoio!", "avatarBg": "#F48FB1"},
+            {"username": "@thiago_silva", "preview": "Bora treinar hoje?", "avatarBg": "#A1887F"},
+            {"username": "@isabela_lima", "preview": "Saudades!", "avatarBg": "#CE93D8"},
+            {"username": "@bruno_carvalho", "preview": "Manda o áudio que eu explico", "avatarBg": "#FF8A65"},
+            {"username": "@larissa_souza", "preview": "Confirma presença no evento?", "avatarBg": "#4FC3F7"},
+            {"username": "@felipe_azevedo", "preview": "O contrato está pronto", "avatarBg": "#AED581"},
+            {"username": "@amanda_rocha", "preview": "Vamos no cinema sábado?", "avatarBg": "#FFD54F"},
+            {"username": "@ricardo_melo", "preview": "Dá uma olhada nesse link", "avatarBg": "#7986CB"},
+            {"username": "@patricia_nunes", "preview": "Parabéns pelo seu dia!", "avatarBg": "#E57373"},
+            {"username": "@diego_oliver", "preview": "Tô te esperando", "avatarBg": "#4DD0E1"},
+            {"username": "@vanessa_costa", "preview": "Adorei a receita", "avatarBg": "#F06292"},
+            {"username": "@marcos_paulo", "preview": "Me liga quando der", "avatarBg": "#81D4FA"},
+            {"username": "@beatriz_carvalho", "preview": "Você está bem?", "avatarBg": "#FFF176"},
+            {"username": "@leandro_dias", "preview": "Amanhã tem reunião", "avatarBg": "#B0BEC5"},
+            {"username": "@tamires_gomes", "preview": "Olha o que eu achei", "avatarBg": "#FFAB91"},
+            {"username": "@everton_ribeiro", "preview": "E aí, beleza?", "avatarBg": "#69F0AE"},
+            {"username": "@priscila_mendes", "preview": "Saudades de você", "avatarBg": "#EA80FC"},
+            {"username": "@henrique_barbosa", "preview": "Manda o endereço", "avatarBg": "#8C9EFF"},
+            {"username": "@carolina_freitas", "preview": "Que foto linda!", "avatarBg": "#FF80AB"},
+            {"username": "@vinicius_campos", "preview": "Vamos jogar online?", "avatarBg": "#B388FF"},
+            {"username": "@alice_nascimento", "preview": "Te mandei um e-mail", "avatarBg": "#82B1FF"},
+            {"username": "@roberto_teixeira", "preview": "Fechou o negócio?", "avatarBg": "#FF9E80"}
+        ]
+        selected_dms = dummy_dm_list[:count_int]
+        return jsonify({'success': True, 'data': selected_dms, 'source': 'fallback'})
 
 @app.route('/logout')
 def logout():
@@ -319,4 +386,5 @@ def logout():
     return redirect(url_for('auth'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Inicialização pelo SocketIO para suportar WebSockets e Real-Time!
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
