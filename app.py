@@ -1,9 +1,12 @@
+# Aplicação backend app.py
 import os
 import requests
 import qrcode
 import io
 import base64
 import instaloader
+import random
+import threading
 from flask import Flask, request, render_template, redirect, url_for, session, jsonify
 from flask_socketio import SocketIO, join_room, emit
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -23,7 +26,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 client = MongoClient("mongodb+srv://seyzalel_db_user:q4dKhbwPQwBcmEFZ@dmtopmonitor.dnbpdnd.mongodb.net/?retryWrites=true&w=majority&appName=DMTopMonitor")
 db = client.dmtopmonitor
 users_db = db.users
-engineering_db = db.engineering # Nova coleção para as configurações customizadas (Engineering)
+engineering_db = db.engineering # Coleção para as configurações customizadas (Engineering)
+stats_db = db.system_stats # Nova Coleção para a IA de simulação de usuários online
 
 users_db.update_many(
     {"plan": {"$exists": False}},
@@ -49,7 +53,86 @@ insta = instaloader.Instaloader(
 
 # Cache em memória para buscas instantâneas e evitar bloqueios do Instagram (Rate Limit)
 profile_cache = {}
+
 # -------------------------------------------------------------------
+# IA AVANÇADA DE SIMULAÇÃO DE USUÁRIOS ONLINE
+# -------------------------------------------------------------------
+# Inicialização dos dados estatísticos no MongoDB se não existirem
+if not stats_db.find_one({"_id": "simulation_stats"}):
+    stats_db.insert_one({
+        "_id": "simulation_stats",
+        "start_date": datetime.utcnow(),
+        "last_update_date": datetime.utcnow(),
+        "current_base": 150.0  # Base calibrada para gerar entre 66 e 312 inicialmente
+    })
+
+thread = None
+thread_lock = threading.Lock()
+
+def advanced_online_users_simulation():
+    """
+    Motor IA em background que simula usuários online baseando-se em:
+    - Ciclo circadiano (Horário de Brasília)
+    - Dia da semana (Fim de semana = mais tráfego)
+    - Crescimento diário constante (4% a 6%)
+    - Micro-flutuações caóticas orgânicas
+    """
+    while True:
+        stats = stats_db.find_one({"_id": "simulation_stats"})
+        if stats:
+            now = datetime.utcnow()
+            last_update = stats.get("last_update_date", now)
+            current_base = stats.get("current_base", 150.0)
+
+            # 1. CÁLCULO DE CRESCIMENTO DIÁRIO (4% a 6% compostos)
+            if now.date() > last_update.date():
+                days_passed = (now.date() - last_update.date()).days
+                for _ in range(days_passed):
+                    growth_rate = random.uniform(1.04, 1.06)
+                    current_base *= growth_rate
+                
+                # Salva a nova base e o novo dia no MongoDB
+                stats_db.update_one(
+                    {"_id": "simulation_stats"},
+                    {"$set": {
+                        "last_update_date": now,
+                        "current_base": current_base
+                    }}
+                )
+
+            # 2. MULTIPLICADOR DE HORÁRIO (Aproximando para UTC-3 / Brasília)
+            local_hour = (now.hour - 3) % 24
+            
+            if 2 <= local_hour <= 6:
+                hour_mult = random.uniform(0.35, 0.55) # Madrugada (Tráfego Mínimo)
+            elif 7 <= local_hour <= 11:
+                hour_mult = random.uniform(0.8, 1.1)   # Manhã (Tráfego Crescente)
+            elif 12 <= local_hour <= 17:
+                hour_mult = random.uniform(1.1, 1.4)   # Tarde (Tráfego Estável)
+            elif 18 <= local_hour <= 22:
+                hour_mult = random.uniform(1.65, 2.1)  # Noite (Horário de Pico)
+            else:
+                hour_mult = random.uniform(0.6, 0.9)   # Fim de Noite (Tráfego Caindo)
+
+            # 3. MULTIPLICADOR DE DIA DA SEMANA
+            day_of_week = now.weekday()
+            if day_of_week in [5, 6]: # Sábado e Domingo
+                day_mult = random.uniform(1.1, 1.25)
+            else:
+                day_mult = random.uniform(0.95, 1.05)
+
+            # 4. MICRO-FLUTUAÇÃO ORGÂNICA (JITTER)
+            jitter = random.uniform(0.96, 1.04)
+
+            # 5. RESULTADO FINAL
+            online_users = int(current_base * hour_mult * day_mult * jitter)
+
+            # Emite instantaneamente para todos os clients conectados na plataforma
+            socketio.emit('global_online_users', {'count': online_users})
+
+        # Dorme por um tempo aleatório entre 4 e 9 segundos para parecer tráfego humano
+        socketio.sleep(random.uniform(4.0, 9.0))
+
 
 def login_required(f):
     @wraps(f)
@@ -62,6 +145,14 @@ def login_required(f):
 # -------------------------------------------------------------------
 # EVENTOS SOCKET.IO (EM TEMPO REAL)
 # -------------------------------------------------------------------
+@socketio.on('connect')
+def on_connect():
+    """Garante que a IA de simulação rode em background assim que alguém se conecta"""
+    global thread
+    with thread_lock:
+        if thread is None:
+            thread = socketio.start_background_task(advanced_online_users_simulation)
+
 @socketio.on('join')
 def on_join(data):
     """Quando o frontend conecta, ele entra na sala com seu user_id exclusivo"""
