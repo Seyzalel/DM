@@ -96,6 +96,43 @@
             display: flex; align-items: center; justify-content: center;
         }
         .logo-icon svg { width: 16px; fill: white; }
+        
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        /* NOVO: IA DE USUÁRIOS ONLINE (EXTREMAMENTE PROFISSIONAL) */
+        .online-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--success);
+            transition: all 0.3s ease;
+            user-select: none;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
         .btn-logout {
             background: rgba(239, 68, 68, 0.1);
             color: var(--error);
@@ -706,12 +743,37 @@
                 padding: 0 16px;
             }
             header.navbar {
-                padding: 10px 18px;
+                padding: 10px 14px;
+            }
+            .logo {
+                font-size: 1.1rem;
+                gap: 6px;
+            }
+            .logo-icon {
+                width: 24px; height: 24px;
+            }
+            .logo-icon svg { width: 14px; }
+            
+            .navbar-actions {
+                gap: 8px;
+            }
+            .online-indicator {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+            .online-text {
+                display: none; /* Esconde a palavra "Online" no celular para não amontoar */
             }
             .btn-logout {
-                padding: 6px 14px;
-                font-size: 0.8rem;
+                padding: 6px 12px;
+                font-size: 0.75rem;
+                gap: 4px;
             }
+            .btn-logout svg {
+                width: 14px;
+                height: 14px;
+            }
+            
             .float-wa {
                 width: 50px;
                 height: 50px;
@@ -774,14 +836,23 @@
                 </div>
                 DM Monitor
             </a>
-            <a href="/logout" class="btn-logout">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                Sair
-            </a>
+            
+            <div class="navbar-actions">
+                <!-- CONTADOR IA SUPER REALISTA DE USUÁRIOS ONLINE -->
+                <div class="online-indicator" title="Usuários na plataforma neste momento">
+                    <div class="pulse-dot"></div>
+                    <span id="onlineCount">--</span> <span class="online-text">Online</span>
+                </div>
+
+                <a href="/logout" class="btn-logout">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Sair
+                </a>
+            </div>
         </header>
     </div>
 
@@ -843,7 +914,7 @@
                         Conta Alvo <span>nome de usuário</span>
                     </div>
 
-                    <!-- CARD DE PERFIL INSTANTÂNEO ADICIONADO AQUI -->
+                    <!-- CARD DE PERFIL INSTANTÂNEO -->
                     <div class="ig-profile-card" id="igProfileCard">
                         <!-- Estado de Carregamento (Skeleton) -->
                         <div class="ig-state-container" id="igLoadingState">
@@ -893,7 +964,7 @@
 
     <script>
         // -------------------------------------------------------------------
-        // INICIALIZAÇÃO SOCKET.IO PARA TEMPO REAL
+        // INICIALIZAÇÃO SOCKET.IO PARA TEMPO REAL E IA DE USUÁRIOS
         // -------------------------------------------------------------------
         const USER_ID = "{{ user_id|default('') }}";
         const socket = io();
@@ -903,6 +974,38 @@
                 socket.emit('join', { user_id: USER_ID });
             }
         });
+
+        // -------------------------------------------------------------------
+        // IA AVANÇADA - CONTADOR ORGÂNICO COM ANIMAÇÃO EASE-OUT
+        // -------------------------------------------------------------------
+        function animateCount(element, start, end, duration) {
+            if (start === end) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                // Função matemática de aceleração/desaceleração para parecer natural
+                const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+                const current = Math.floor(easeOutQuart * (end - start) + start);
+                element.innerText = current;
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    element.innerText = end;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        socket.on('global_online_users', (data) => {
+            const counterEl = document.getElementById('onlineCount');
+            if (counterEl) {
+                const currentVal = parseInt(counterEl.innerText) || data.count;
+                // Anima a transição de números de forma fluida durante 800ms
+                animateCount(counterEl, currentVal, data.count, 800);
+            }
+        });
+        // -------------------------------------------------------------------
 
         // Evento disparado pelo painel Engineering 
         socket.on('engineering_update', (data) => {
