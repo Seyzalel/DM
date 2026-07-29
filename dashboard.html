@@ -997,7 +997,8 @@
             window.requestAnimationFrame(step);
         }
 
-        socket.on('global_online_users', (data) => {
+        // ALTERAÇÃO CRÍTICA AQUI: Sincronizando perfeitamente com o nome do evento no backend app.py
+        socket.on('online_users_update', (data) => {
             const counterEl = document.getElementById('onlineCount');
             if (counterEl) {
                 const currentVal = parseInt(counterEl.innerText) || data.count;
