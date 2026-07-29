@@ -1001,7 +1001,8 @@
         socket.on('online_users_update', (data) => {
             const counterEl = document.getElementById('onlineCount');
             if (counterEl) {
-                const currentVal = parseInt(counterEl.innerText) || data.count;
+                // AQUI ESTÁ A CORREÇÃO: "|| 0" para que não trave ao tentar ler os traços "--" na primeira vez
+                const currentVal = parseInt(counterEl.innerText) || 0;
                 // Anima a transição de números de forma fluida durante 800ms
                 animateCount(counterEl, currentVal, data.count, 800);
             }
