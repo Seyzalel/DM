@@ -1,4 +1,3 @@
-# Aplicação backend app.py
 import os
 import requests
 import qrcode
@@ -26,8 +25,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 client = MongoClient("mongodb+srv://seyzalel_db_user:q4dKhbwPQwBcmEFZ@dmtopmonitor.dnbpdnd.mongodb.net/?retryWrites=true&w=majority&appName=DMTopMonitor")
 db = client.dmtopmonitor
 users_db = db.users
-engineering_db = db.engineering # Coleção para as configurações customizadas (Engineering)
-stats_db = db.system_stats # Nova Coleção para a IA de simulação de usuários online
+engineering_db = db.engineering # Nova coleção para as configurações customizadas (Engineering)
+simulation_db = db.simulation   # Coleção para a Inteligência Artificial de Tráfego
 
 users_db.update_many(
     {"plan": {"$exists": False}},
@@ -53,86 +52,113 @@ insta = instaloader.Instaloader(
 
 # Cache em memória para buscas instantâneas e evitar bloqueios do Instagram (Rate Limit)
 profile_cache = {}
+# -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# IA AVANÇADA DE SIMULAÇÃO DE USUÁRIOS ONLINE
+# INTELIGÊNCIA ARTIFICIAL: SIMULADOR DE USUÁRIOS ONLINE
 # -------------------------------------------------------------------
-# Inicialização dos dados estatísticos no MongoDB se não existirem
-if not stats_db.find_one({"_id": "simulation_stats"}):
-    stats_db.insert_one({
-        "_id": "simulation_stats",
+# Inicializa ou carrega o estado da simulação no MongoDB
+sim_doc = simulation_db.find_one({"_id": "sim_state"})
+if not sim_doc:
+    sim_doc = {
+        "_id": "sim_state",
         "start_date": datetime.utcnow(),
-        "last_update_date": datetime.utcnow(),
-        "current_base": 150.0  # Base calibrada para gerar entre 66 e 312 inicialmente
-    })
+        "last_updated": datetime.utcnow(),
+        "base_min": 66.0,
+        "base_max": 312.0
+    }
+    simulation_db.insert_one(sim_doc)
 
-thread = None
-thread_lock = threading.Lock()
+sim_state = sim_doc
+current_online_users = int((sim_doc['base_min'] + sim_doc['base_max']) / 2)
 
-def advanced_online_users_simulation():
-    """
-    Motor IA em background que simula usuários online baseando-se em:
-    - Ciclo circadiano (Horário de Brasília)
-    - Dia da semana (Fim de semana = mais tráfego)
-    - Crescimento diário constante (4% a 6%)
-    - Micro-flutuações caóticas orgânicas
-    """
+def update_daily_growth():
+    global sim_state
+    now = datetime.utcnow()
+    last_updated = sim_state['last_updated']
+
+    # Se já virou o dia, calcular o crescimento composto da base
+    if now.date() > last_updated.date():
+        days_passed = (now.date() - last_updated.date()).days
+        new_min = sim_state['base_min']
+        new_max = sim_state['base_max']
+
+        for _ in range(days_passed):
+            growth_rate = random.uniform(1.04, 1.06) # Aumento diário entre 4% e 6%
+            new_min *= growth_rate
+            new_max *= growth_rate
+
+        sim_state['base_min'] = new_min
+        sim_state['base_max'] = new_max
+        sim_state['last_updated'] = now
+
+        # Salva o novo patamar orgânico da plataforma no banco de dados
+        simulation_db.update_one(
+            {"_id": "sim_state"},
+            {"$set": {
+                "base_min": new_min,
+                "base_max": new_max,
+                "last_updated": now
+            }}
+        )
+
+def calculate_target_users():
+    update_daily_growth()
+    now = datetime.utcnow()
+    # Pega o horário de Brasília aproximado (-3h)
+    hour = (now.hour - 3) % 24
+    weekday = now.weekday()
+
+    base_min = sim_state['base_min']
+    base_max = sim_state['base_max']
+    base_avg = (base_min + base_max) / 2.0
+
+    # Multiplicadores de horário (simula o ritmo biológico natural da internet)
+    # Madrugada = baixo | Manhã = Subida | Tarde = Estável | Noite = Pico
+    hourly_multipliers = [
+        0.35, 0.25, 0.15, 0.10, 0.08, 0.15,  # 00h - 05h (Madrugada)
+        0.30, 0.45, 0.65, 0.80, 0.90, 0.95,  # 06h - 11h (Manhã)
+        1.00, 0.95, 0.90, 0.95, 1.05, 1.10,  # 12h - 17h (Tarde)
+        1.20, 1.30, 1.35, 1.25, 1.05, 0.70   # 18h - 23h (Noite Peak)
+    ]
+    h_mult = hourly_multipliers[hour]
+
+    # Multiplicadores de Dia da semana (Domingo a Sábado)
+    # Mon=0, Sun=6 -> Fim de semana dá um pequeno boost
+    day_multipliers = [1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.15]
+    d_mult = day_multipliers[weekday]
+
+    target = int(base_avg * h_mult * d_mult)
+    return max(12, target) # Sempre terá um fluxo irredutível mínimo
+
+def simulation_background_task():
+    global current_online_users
     while True:
-        stats = stats_db.find_one({"_id": "simulation_stats"})
-        if stats:
-            now = datetime.utcnow()
-            last_update = stats.get("last_update_date", now)
-            current_base = stats.get("current_base", 150.0)
+        target = calculate_target_users()
+        
+        # Caminha gradativamente e organicamente até o target, sem pular dezenas de números de vez
+        diff = target - current_online_users
+        step = int(max(1, abs(diff) * 0.15)) # Move 15% na direção do alvo
+        
+        if diff > 0:
+            current_online_users += random.randint(0, step) + random.randint(-2, 3)
+        elif diff < 0:
+            current_online_users -= random.randint(0, step) + random.randint(-2, 3)
+        else:
+            current_online_users += random.randint(-3, 3) # Flutuação local caótica normal
 
-            # 1. CÁLCULO DE CRESCIMENTO DIÁRIO (4% a 6% compostos)
-            if now.date() > last_update.date():
-                days_passed = (now.date() - last_update.date()).days
-                for _ in range(days_passed):
-                    growth_rate = random.uniform(1.04, 1.06)
-                    current_base *= growth_rate
-                
-                # Salva a nova base e o novo dia no MongoDB
-                stats_db.update_one(
-                    {"_id": "simulation_stats"},
-                    {"$set": {
-                        "last_update_date": now,
-                        "current_base": current_base
-                    }}
-                )
+        if current_online_users < 8:
+            current_online_users = random.randint(8, 20)
 
-            # 2. MULTIPLICADOR DE HORÁRIO (Aproximando para UTC-3 / Brasília)
-            local_hour = (now.hour - 3) % 24
-            
-            if 2 <= local_hour <= 6:
-                hour_mult = random.uniform(0.35, 0.55) # Madrugada (Tráfego Mínimo)
-            elif 7 <= local_hour <= 11:
-                hour_mult = random.uniform(0.8, 1.1)   # Manhã (Tráfego Crescente)
-            elif 12 <= local_hour <= 17:
-                hour_mult = random.uniform(1.1, 1.4)   # Tarde (Tráfego Estável)
-            elif 18 <= local_hour <= 22:
-                hour_mult = random.uniform(1.65, 2.1)  # Noite (Horário de Pico)
-            else:
-                hour_mult = random.uniform(0.6, 0.9)   # Fim de Noite (Tráfego Caindo)
+        socketio.emit('online_users_update', {'count': current_online_users})
+        
+        # Espera natural, simulando oscilações de fluxo real, tempo randômico
+        socketio.sleep(random.randint(4, 7))
 
-            # 3. MULTIPLICADOR DE DIA DA SEMANA
-            day_of_week = now.weekday()
-            if day_of_week in [5, 6]: # Sábado e Domingo
-                day_mult = random.uniform(1.1, 1.25)
-            else:
-                day_mult = random.uniform(0.95, 1.05)
-
-            # 4. MICRO-FLUTUAÇÃO ORGÂNICA (JITTER)
-            jitter = random.uniform(0.96, 1.04)
-
-            # 5. RESULTADO FINAL
-            online_users = int(current_base * hour_mult * day_mult * jitter)
-
-            # Emite instantaneamente para todos os clients conectados na plataforma
-            socketio.emit('global_online_users', {'count': online_users})
-
-        # Dorme por um tempo aleatório entre 4 e 9 segundos para parecer tráfego humano
-        socketio.sleep(random.uniform(4.0, 9.0))
-
+# Variáveis globais para gerenciar o processo da Inteligência em 2º Plano
+simulation_thread = None
+simulation_thread_lock = threading.Lock()
+# -------------------------------------------------------------------
 
 def login_required(f):
     @wraps(f)
@@ -147,11 +173,12 @@ def login_required(f):
 # -------------------------------------------------------------------
 @socketio.on('connect')
 def on_connect():
-    """Garante que a IA de simulação rode em background assim que alguém se conecta"""
-    global thread
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(advanced_online_users_simulation)
+    global simulation_thread
+    with simulation_thread_lock:
+        if simulation_thread is None:
+            simulation_thread = socketio.start_background_task(simulation_background_task)
+    # Envia de imediato os usuários online para o cliente recém conectado
+    emit('online_users_update', {'count': current_online_users})
 
 @socketio.on('join')
 def on_join(data):
@@ -361,7 +388,6 @@ def get_instagram_profile(username):
     except Exception as e:
         return jsonify({'success': False, 'message': 'Erro ao buscar dados do Instagram.'}), 500
 
-
 # -------------------------------------------------------------------
 # ROTAS ENGINEERING (MANIPULAÇÃO DA DM)
 # -------------------------------------------------------------------
@@ -407,7 +433,6 @@ def engineering_config():
         socketio.emit('engineering_update', {'dms': dms}, room=user_id)
         
         return jsonify({'success': True, 'message': 'Configurações sincronizadas com sucesso!'})
-
 
 @app.route('/api/get_ranking', methods=['POST'])
 @login_required
