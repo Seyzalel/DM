@@ -169,6 +169,30 @@ def login_required(f):
     return decorated_function
 
 # -------------------------------------------------------------------
+# SISTEMA ABSOLUTO DE VERIFICAÇÃO DE ASSINATURA EM TEMPO REAL
+# -------------------------------------------------------------------
+@app.before_request
+def check_plan_expiration():
+    """
+    Verifica em TODA e QUALQUER requisição se a assinatura ilimitada 
+    do usuário atingiu os exatos 30 dias. Se estourou, rebaxará 
+    imediatamente para o plano standard.
+    """
+    if 'user_id' in session:
+        # Pula endpoints de arquivos estáticos para não gastar processamento
+        if request.endpoint and 'static' not in request.endpoint:
+            user = users_db.find_one({"_id": ObjectId(session['user_id'])})
+            if user and user.get('plan') == 'unlimited':
+                expiration = user.get('plan_expiration')
+                if expiration and datetime.utcnow() > expiration:
+                    # O tempo esgotou! Reverte para standard e apaga a data de expiração
+                    users_db.update_one(
+                        {"_id": ObjectId(session['user_id'])},
+                        {"$set": {"plan": "standard"}, "$unset": {"plan_expiration": ""}}
+                    )
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
 # EVENTOS SOCKET.IO (EM TEMPO REAL)
 # -------------------------------------------------------------------
 @socketio.on('connect')
@@ -250,7 +274,19 @@ def dashboard():
     user = users_db.find_one({"_id": ObjectId(session['user_id'])})
     plan = user.get('plan', 'standard') if user else 'standard'
     username = user.get('username', session.get('username', 'Usuário')) if user else 'Usuário'
-    return render_template('dashboard.html', username=username, plan=plan, user_id=str(session['user_id']))
+    email = user.get('email', '') if user else ''
+    
+    # Prepara a data em ISO string para ser manipulada pelo JS do Frontend e fazer a barra de progresso em tempo real
+    plan_expiration = ""
+    if plan == 'unlimited' and 'plan_expiration' in user:
+        plan_expiration = user['plan_expiration'].isoformat() + "Z"
+        
+    return render_template('dashboard.html', 
+                           username=username, 
+                           email=email,
+                           plan=plan, 
+                           user_id=str(session['user_id']),
+                           plan_expiration=plan_expiration)
 
 @app.route('/plans')
 @login_required
@@ -342,9 +378,14 @@ def check_status(tx_hash):
         status = result.get('payment_status')
         
         if status == 'paid':
+            # Seta a expiração exata para 30 dias a partir de agora
+            expiration_date = datetime.utcnow() + timedelta(days=30)
             users_db.update_one(
                 {"_id": ObjectId(session['user_id'])},
-                {"$set": {"plan": "unlimited"}}
+                {"$set": {
+                    "plan": "unlimited",
+                    "plan_expiration": expiration_date
+                }}
             )
             return jsonify({'success': True, 'status': 'paid'})
             
