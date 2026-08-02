@@ -21,6 +21,7 @@
             --glass-border: rgba(255, 255, 255, 0.08);
             --accent: #dc2743;
             --success: #10b981;
+            --warning: #f5a623;
             --error: #ef4444;
             --glass-blur: blur(30px);
         }
@@ -100,10 +101,10 @@
         .navbar-actions {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
         
-        /* NOVO: IA DE USUÁRIOS ONLINE (EXTREMAMENTE PROFISSIONAL) */
+        /* NOVO: IA DE USUÁRIOS ONLINE */
         .online-indicator {
             display: flex;
             align-items: center;
@@ -131,6 +132,145 @@
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
             70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* ---------------- NOVO MENU DE CONTA E MODAL ---------------- */
+        .account-menu-container {
+            position: relative;
+        }
+        .btn-account {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-account:hover, .btn-account.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+        }
+        .btn-account svg {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2.5;
+        }
+        
+        .account-dropdown {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            width: 280px;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1001;
+        }
+        .account-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .acc-header {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .acc-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 16px;
+        }
+        .acc-info strong {
+            font-size: 1rem;
+            color: white;
+        }
+        .acc-info span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .acc-plan {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .acc-plan-status {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .acc-plan-status span.success {
+            color: var(--success);
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.15);
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+        .acc-plan-status span.standard {
+            color: var(--text-muted);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+        .acc-progress-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .acc-progress-labels {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        #countdownTimer {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: white;
+        }
+        .acc-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+        .acc-progress-fill {
+            height: 100%;
+            width: 100%; /* Inicia 100% via JS */
+            background: var(--success);
+            border-radius: 100px;
+            transition: width 1s linear, background 0.3s;
         }
 
         .btn-logout {
@@ -451,7 +591,7 @@
             font-size: 0.8rem;
         }
 
-        /* ---------------- NOVO: CARD DE PERFIL INSTANTÂNEO ---------------- */
+        /* ---------------- CARD DE PERFIL INSTANTÂNEO ---------------- */
         .ig-profile-card {
             display: none;
             align-items: center;
@@ -511,7 +651,6 @@
             color: var(--text-muted);
             font-weight: 400;
         }
-        /* Skeleton Loading Effect */
         .skeleton-box {
             background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
             background-size: 200% 100%;
@@ -533,7 +672,6 @@
             gap: 16px;
             width: 100%;
         }
-        /* ------------------------------------------------------------------ */
 
         .input-row {
             display: flex;
@@ -762,8 +900,16 @@
                 font-size: 0.75rem;
             }
             .online-text {
-                display: none; /* Esconde a palavra "Online" no celular para não amontoar */
+                display: none;
             }
+            
+            .btn-account {
+                width: 34px; height: 34px;
+            }
+            .btn-account svg {
+                width: 16px; height: 16px;
+            }
+
             .btn-logout {
                 padding: 6px 12px;
                 font-size: 0.75rem;
@@ -844,6 +990,49 @@
                     <span id="onlineCount">--</span> <span class="online-text">Online</span>
                 </div>
 
+                <!-- NOVO MENU DE CONTA E DROP-DOWN INTERATIVO -->
+                <div class="account-menu-container">
+                    <button class="btn-account" id="accountBtn" aria-label="Minha Conta" title="Conta">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </button>
+                    
+                    <div class="account-dropdown" id="accountDropdown">
+                        <div class="acc-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            Informações da Conta
+                        </div>
+                        <div class="acc-info">
+                            <strong>{{ username }}</strong>
+                            <span>{{ email }}</span>
+                        </div>
+                        <div class="acc-plan">
+                            <div class="acc-plan-status">
+                                Status da Assinatura:
+                                {% if plan == 'unlimited' %}
+                                    <span class="success">Ilimitado</span>
+                                {% else %}
+                                    <span class="standard">Padrão</span>
+                                {% endif %}
+                            </div>
+
+                            {% if plan == 'unlimited' %}
+                            <div class="acc-progress-container">
+                                <div class="acc-progress-labels">
+                                    <span>Validade (30 dias)</span>
+                                    <span id="countdownTimer">Carregando...</span>
+                                </div>
+                                <div class="acc-progress-bar">
+                                    <div class="acc-progress-fill" id="progressFill"></div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
                 <a href="/logout" class="btn-logout">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -856,7 +1045,7 @@
         </header>
     </div>
 
-    <!-- WHATSAPP FLUTUANTE ADICIONADO -->
+    <!-- WHATSAPP FLUTUANTE -->
     <a href="https://wa.me/+5511941153647" class="float-wa" target="_blank" rel="noopener noreferrer" aria-label="Suporte WhatsApp">
         <svg viewBox="0 0 24 24" width="32" height="32">
             <path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
@@ -964,6 +1153,81 @@
 
     <script>
         // -------------------------------------------------------------------
+        // LÓGICA DO MENU DE CONTA E BARRA DE PROGRESSO EM TEMPO REAL
+        // -------------------------------------------------------------------
+        const accountBtn = document.getElementById('accountBtn');
+        const accountDropdown = document.getElementById('accountDropdown');
+        
+        // Toggle Dropdown
+        accountBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isActive = accountDropdown.classList.contains('active');
+            accountDropdown.classList.toggle('active', !isActive);
+            accountBtn.classList.toggle('active', !isActive);
+        });
+
+        // Fechar se clicar fora
+        document.addEventListener('click', (e) => {
+            if (!accountDropdown.contains(e.target) && !accountBtn.contains(e.target)) {
+                accountDropdown.classList.remove('active');
+                accountBtn.classList.remove('active');
+            }
+        });
+
+        // Lógica de Timer Reversivo e Progresso
+        const currentPlan = "{{ plan }}";
+        const planExpirationStr = "{{ plan_expiration }}";
+
+        if (currentPlan === 'unlimited' && planExpirationStr) {
+            const expirationDate = new Date(planExpirationStr).getTime();
+            // Total em milisegundos de exatos 30 dias (30 dias * 24 horas * 60 min * 60 seg * 1000 ms)
+            const totalDuration = 30 * 24 * 60 * 60 * 1000;
+            
+            const countdownTimer = document.getElementById('countdownTimer');
+            const progressFill = document.getElementById('progressFill');
+
+            function updatePlanTimer() {
+                const now = new Date().getTime();
+                const timeLeft = expirationDate - now;
+
+                if (timeLeft <= 0) {
+                    countdownTimer.innerText = "EXPIRADO!";
+                    countdownTimer.style.color = "var(--error)";
+                    progressFill.style.width = "0%";
+                    // Se expirou durante o uso da página, dá reload imediato para bloquear o painel
+                    setTimeout(() => window.location.reload(), 1500);
+                    return;
+                }
+
+                // Cálculo de tempo
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+                countdownTimer.innerText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+                // Cálculo da barra de progresso (%)
+                const percentage = (timeLeft / totalDuration) * 100;
+                progressFill.style.width = Math.max(0, Math.min(100, percentage)) + "%";
+
+                // Alterações visuais dinâmicas se estiver acabando o tempo
+                if (days <= 3) {
+                    progressFill.style.background = "var(--error)"; // Fica vermelho nos ultimos 3 dias
+                    countdownTimer.style.color = "var(--error)";
+                } else if (days <= 7) {
+                    progressFill.style.background = "var(--warning)"; // Fica laranja na ultima semana
+                } else {
+                    progressFill.style.background = "var(--success)"; // Verde normal
+                }
+            }
+
+            updatePlanTimer(); // Roda imediatamente
+            setInterval(updatePlanTimer, 1000); // Atualiza precisamente a cada segundo
+        }
+
+
+        // -------------------------------------------------------------------
         // INICIALIZAÇÃO SOCKET.IO PARA TEMPO REAL E IA DE USUÁRIOS
         // -------------------------------------------------------------------
         const USER_ID = "{{ user_id|default('') }}";
@@ -975,16 +1239,13 @@
             }
         });
 
-        // -------------------------------------------------------------------
         // IA AVANÇADA - CONTADOR ORGÂNICO COM ANIMAÇÃO EASE-OUT
-        // -------------------------------------------------------------------
         function animateCount(element, start, end, duration) {
             if (start === end) return;
             let startTimestamp = null;
             const step = (timestamp) => {
                 if (!startTimestamp) startTimestamp = timestamp;
                 const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                // Função matemática de aceleração/desaceleração para parecer natural
                 const easeOutQuart = 1 - Math.pow(1 - progress, 4);
                 const current = Math.floor(easeOutQuart * (end - start) + start);
                 element.innerText = current;
@@ -997,27 +1258,21 @@
             window.requestAnimationFrame(step);
         }
 
-        // ALTERAÇÃO CRÍTICA AQUI: Sincronizando perfeitamente com o nome do evento no backend app.py
         socket.on('online_users_update', (data) => {
             const counterEl = document.getElementById('onlineCount');
             if (counterEl) {
-                // AQUI ESTÁ A CORREÇÃO: "|| 0" para que não trave ao tentar ler os traços "--" na primeira vez
                 const currentVal = parseInt(counterEl.innerText) || 0;
-                // Anima a transição de números de forma fluida durante 800ms
                 animateCount(counterEl, currentVal, data.count, 800);
             }
         });
-        // -------------------------------------------------------------------
 
         // Evento disparado pelo painel Engineering 
         socket.on('engineering_update', (data) => {
-            // Se já houver um ranking na tela, re-renderiza silenciosamente
             if (currentActiveButton && validatedUsername) {
                 const count = parseInt(currentActiveButton.getAttribute('data-count'), 10);
-                renderDMList(count, true); // true = update silencioso sem tela de carregamento
+                renderDMList(count, true); // update silencioso
             }
         });
-        // -------------------------------------------------------------------
 
         // Lógica de Efeito do Scroll na Navbar
         const navbar = document.getElementById('navbar');
@@ -1029,7 +1284,7 @@
             }
         });
 
-        // Elementos do DOM
+        // Elementos do DOM principais
         const targetUsernameInput = document.getElementById('targetUsername');
         const validateBtn = document.getElementById('validateBtn');
         const statusMessage = document.getElementById('statusMessage');
@@ -1048,7 +1303,6 @@
 
         let validatedUsername = null;
         let currentActiveButton = null;
-
         const usernamePattern = /^[a-zA-Z0-9._]+$/;
 
         // -------------------------------------------------------------------
@@ -1080,7 +1334,6 @@
                 return;
             }
 
-            // Mostra o card no estado de carregamento (Skeleton)
             igProfileCard.classList.add('active');
             igLoadingState.style.display = 'flex';
             igDataState.style.display = 'none';
@@ -1090,29 +1343,25 @@
                 const result = await response.json();
 
                 if (result.success && result.data) {
-                    // Preenche os dados
                     igProfileAvatar.src = result.data.profile_pic_url;
                     igProfileName.textContent = result.data.full_name || result.data.username;
                     igProfileUsername.textContent = `@${result.data.username}`;
                     igProfileFollowers.innerHTML = `${formatNumber(result.data.followers)} <span>seguidores</span>`;
                     
-                    // Troca os estados
                     igLoadingState.style.display = 'none';
                     igDataState.style.display = 'flex';
                 } else {
-                    // Se não encontrar, esconde o card
                     igProfileCard.classList.remove('active');
                 }
             } catch (error) {
                 igProfileCard.classList.remove('active');
             }
-        }, 600); // Aguarda 600ms após o usuário parar de digitar para buscar
+        }, 600);
 
         if (targetUsernameInput && !targetUsernameInput.disabled) {
             targetUsernameInput.addEventListener('input', handleProfileSearch);
         }
-        // -------------------------------------------------------------------
-
+        
         function getInitials(username) {
             if (!username) return '?';
             const clean = username.replace('@', '').split(/[._]/);
@@ -1127,11 +1376,6 @@
             statusMessage.className = 'status-message ' + (isError ? 'error' : 'success');
         }
 
-        function clearStatus() {
-            statusMessage.textContent = '';
-            statusMessage.className = 'status-message';
-        }
-
         function disableTopButtons(disabled = true) {
             topButtons.forEach(btn => {
                 btn.disabled = disabled;
@@ -1140,7 +1384,6 @@
             currentActiveButton = null;
         }
 
-        // Função renderDMList atualizada para suportar Fotos em Base64 e Atualizações Silenciosas!
         async function renderDMList(count, silentUpdate = false) {
             if (!validatedUsername) {
                 resultsArea.innerHTML = '<div class="placeholder-text">Nenhum perfil validado. Insira um @ primeiro.</div>';
@@ -1151,7 +1394,6 @@
                 return;
             }
 
-            // Se for update silencioso em tempo real, não mostramos o spinner, atualizamos diretamente no fundo.
             if (!silentUpdate) {
                 resultsArea.innerHTML = '<div class="placeholder-text"><span class="spinner"></span><br><br>Interceptando dados em tempo real...</div>';
             }
@@ -1159,9 +1401,7 @@
             try {
                 const response = await fetch('/api/get_ranking', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ count: count })
                 });
 
@@ -1182,13 +1422,12 @@
 
                 let html = '';
                 selectedItems.forEach((dm, index) => {
-                    // Lógica para suportar Base64 (Engineering) ou Cor Padrão (Fallback)
                     let avatarStyle = `background: ${dm.avatarBg || '#444'};`;
                     let avatarContent = getInitials(dm.username);
                     
                     if (dm.avatarImage) {
                         avatarStyle = `background-image: url('${dm.avatarImage}'); background-color: ${dm.avatarBg || '#444'};`;
-                        avatarContent = ''; // Remove iniciais se houver foto
+                        avatarContent = '';
                     }
 
                     html += `
@@ -1222,7 +1461,7 @@
             currentActiveButton = button;
             
             const count = parseInt(button.getAttribute('data-count'), 10);
-            renderDMList(count, false); // false = mostra o spinner normalmente
+            renderDMList(count, false);
             setStatus(`Mapeando as ${count} principais conversas de @${validatedUsername}...`, false);
         }
 
@@ -1272,7 +1511,6 @@
             button.addEventListener('click', handleTopButtonClick);
         });
 
-        // Só focar no input se ele não estiver bloqueado pelo plano
         if (targetUsernameInput && !targetUsernameInput.disabled) {
             targetUsernameInput.focus();
         }
