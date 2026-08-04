@@ -369,6 +369,16 @@
             transform: translateY(1px) scale(0.98);
         }
 
+        /* Classes essenciais para o estado "Disabled" quando já houver assinado */
+        .cta-button.disabled, .cta-button:disabled {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #888888 !important;
+            box-shadow: none !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
         .secure-payment {
             display: flex;
             align-items: center;
@@ -482,12 +492,21 @@
                     </li>
                 </ul>
 
-                <button class="cta-button" id="checkoutBtn">
-                    Assinar e Liberar Agora
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
+                <!-- JINJA TEMPLATE: Verifica imediatamente o estado do usuário na inicialização -->
+                <button class="cta-button {% if plan == 'unlimited' %}disabled{% endif %}" id="checkoutBtn" {% if plan == 'unlimited' %}disabled{% endif %}>
+                    {% if plan == 'unlimited' %}
+                        Plano Já Ativado
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    {% else %}
+                        Assinar e Liberar Agora
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    {% endif %}
                 </button>
 
                 <div class="secure-payment">
@@ -500,10 +519,63 @@
         </div>
     </main>
 
+    <!-- Importação do Socket.IO para Reatividade em Tempo Real -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
         const checkoutBtn = document.getElementById('checkoutBtn');
+        const userId = "{{ user_id }}";
+        
+        // 1. Socket.IO Inicialização
+        const socket = io();
 
+        socket.on('connect', () => {
+            // Entra na sala exclusiva deste usuário para ouvir mudanças no plano
+            socket.emit('join', { user_id: userId });
+        });
+
+        // Ouve ativamente em tempo real o evento de mudança de plano
+        socket.on('plan_updated', (data) => {
+            if (data.plan === 'unlimited') {
+                disableButtonUI();
+            } else {
+                enableButtonUI();
+            }
+        });
+
+        // 2. Funções de interface gráfica (Atualiza o CSS instantaneamente)
+        function disableButtonUI() {
+            checkoutBtn.disabled = true;
+            checkoutBtn.classList.add('disabled');
+            checkoutBtn.style.pointerEvents = 'none';
+            checkoutBtn.innerHTML = `
+                Plano Já Ativado
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            `;
+        }
+
+        function enableButtonUI() {
+            checkoutBtn.disabled = false;
+            checkoutBtn.classList.remove('disabled');
+            checkoutBtn.style.pointerEvents = 'auto';
+            checkoutBtn.innerHTML = `
+                Assinar e Liberar Agora
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            `;
+        }
+
+        // 3. Evento de Clique e animação de processamento
         checkoutBtn.addEventListener('click', () => {
+            // Trava de segurança no lado do cliente: ignora clique se estiver inativo
+            if (checkoutBtn.disabled || checkoutBtn.classList.contains('disabled')) {
+                return;
+            }
+
             const originalText = checkoutBtn.innerHTML;
             checkoutBtn.innerHTML = '<span style="display: inline-block; width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite;"></span> Processando...';
             checkoutBtn.style.pointerEvents = 'none';
