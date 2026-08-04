@@ -52,8 +52,8 @@ insta = instaloader.Instaloader(
 
 # Cache em memória para buscas instantâneas e evitar bloqueios do Instagram (Rate Limit)
 profile_cache = {}
-# -------------------------------------------------------------------
 
+# -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # INTELIGÊNCIA ARTIFICIAL: SIMULADOR DE USUÁRIOS ONLINE
 # -------------------------------------------------------------------
@@ -76,22 +76,22 @@ def update_daily_growth():
     global sim_state
     now = datetime.utcnow()
     last_updated = sim_state['last_updated']
-
+    
     # Se já virou o dia, calcular o crescimento composto da base
     if now.date() > last_updated.date():
         days_passed = (now.date() - last_updated.date()).days
         new_min = sim_state['base_min']
         new_max = sim_state['base_max']
-
+        
         for _ in range(days_passed):
             growth_rate = random.uniform(1.04, 1.06) # Aumento diário entre 4% e 6%
             new_min *= growth_rate
             new_max *= growth_rate
-
+            
         sim_state['base_min'] = new_min
         sim_state['base_max'] = new_max
         sim_state['last_updated'] = now
-
+        
         # Salva o novo patamar orgânico da plataforma no banco de dados
         simulation_db.update_one(
             {"_id": "sim_state"},
@@ -105,14 +105,15 @@ def update_daily_growth():
 def calculate_target_users():
     update_daily_growth()
     now = datetime.utcnow()
+    
     # Pega o horário de Brasília aproximado (-3h)
     hour = (now.hour - 3) % 24
     weekday = now.weekday()
-
+    
     base_min = sim_state['base_min']
     base_max = sim_state['base_max']
     base_avg = (base_min + base_max) / 2.0
-
+    
     # Multiplicadores de horário (simula o ritmo biológico natural da internet)
     # Madrugada = baixo | Manhã = Subida | Tarde = Estável | Noite = Pico
     hourly_multipliers = [
@@ -122,12 +123,12 @@ def calculate_target_users():
         1.20, 1.30, 1.35, 1.25, 1.05, 0.70   # 18h - 23h (Noite Peak)
     ]
     h_mult = hourly_multipliers[hour]
-
+    
     # Multiplicadores de Dia da semana (Domingo a Sábado)
     # Mon=0, Sun=6 -> Fim de semana dá um pequeno boost
     day_multipliers = [1.0, 1.0, 1.0, 1.0, 1.1, 1.2, 1.15]
     d_mult = day_multipliers[weekday]
-
+    
     target = int(base_avg * h_mult * d_mult)
     return max(12, target) # Sempre terá um fluxo irredutível mínimo
 
@@ -146,10 +147,10 @@ def simulation_background_task():
             current_online_users -= random.randint(0, step) + random.randint(-2, 3)
         else:
             current_online_users += random.randint(-3, 3) # Flutuação local caótica normal
-
+            
         if current_online_users < 8:
             current_online_users = random.randint(8, 20)
-
+            
         socketio.emit('online_users_update', {'count': current_online_users})
         
         # Espera natural, simulando oscilações de fluxo real, tempo randômico
@@ -158,8 +159,8 @@ def simulation_background_task():
 # Variáveis globais para gerenciar o processo da Inteligência em 2º Plano
 simulation_thread = None
 simulation_thread_lock = threading.Lock()
-# -------------------------------------------------------------------
 
+# -------------------------------------------------------------------
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -190,8 +191,10 @@ def check_plan_expiration():
                         {"_id": ObjectId(session['user_id'])},
                         {"$set": {"plan": "standard"}, "$unset": {"plan_expiration": ""}}
                     )
-# -------------------------------------------------------------------
+                    # Dispara em tempo real a queda do plano para o client-side (Frontend)
+                    socketio.emit('plan_updated', {'plan': 'standard'}, room=session['user_id'])
 
+# -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # EVENTOS SOCKET.IO (EM TEMPO REAL)
 # -------------------------------------------------------------------
@@ -291,11 +294,20 @@ def dashboard():
 @app.route('/plans')
 @login_required
 def plans():
-    return render_template('plans.html')
+    # Passando o plano e user_id para o frontend para bloquear o botão via template e tempo real
+    user = users_db.find_one({"_id": ObjectId(session['user_id'])})
+    plan = user.get('plan', 'standard') if user else 'standard'
+    
+    return render_template('plans.html', plan=plan, user_id=str(session['user_id']))
 
 @app.route('/checkout')
 @login_required
 def checkout():
+    user = users_db.find_one({"_id": ObjectId(session['user_id'])})
+    # Bloqueio de segurança robusto: Usuários unlimited não têm acesso ao checkout
+    if user and user.get('plan') == 'unlimited':
+        return redirect(url_for('dashboard'))
+        
     return render_template('pixCheckout.html')
 
 @app.route('/api/generate_pix', methods=['POST'])
@@ -303,6 +315,10 @@ def checkout():
 def generate_pix():
     user = users_db.find_one({"_id": ObjectId(session['user_id'])})
     
+    # Bloqueio rigoroso na API: Previne tentativas forçadas de gerar PIX caso já seja Ilimitado
+    if user and user.get('plan') == 'unlimited':
+        return jsonify({'success': False, 'message': 'Você já possui o Plano Ilimitado ativo.'}), 400
+        
     url = f"{PLUMIFY_BASE_URL}?api_token={PLUMIFY_API_TOKEN}"
     headers = {
         "Content-Type": "application/json",
@@ -387,6 +403,9 @@ def check_status(tx_hash):
                     "plan_expiration": expiration_date
                 }}
             )
+            # TEMPO REAL: Informa de imediato pelo WebSocket que a assinatura ativou e é "unlimited"
+            socketio.emit('plan_updated', {'plan': 'unlimited'}, room=session['user_id'])
+            
             return jsonify({'success': True, 'status': 'paid'})
             
         return jsonify({'success': True, 'status': status})
