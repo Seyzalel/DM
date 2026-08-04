@@ -310,7 +310,7 @@ def generate_pix():
     }
     
     data = {
-        'amount': 5500,
+        'amount': 3955,
         'offer_hash': 'taebbjxtkr',
         'payment_method': 'pix',
         'customer': {
@@ -323,7 +323,7 @@ def generate_pix():
             {
                 'product_hash': '56aujwvfng',
                 'title': 'Plano Unlimited',
-                'price': 5500,
+                'price': 3955,
                 'quantity': 1,
                 'operation_type': 1,
                 'tangible': False
