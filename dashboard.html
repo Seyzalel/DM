@@ -169,7 +169,7 @@
             position: absolute;
             top: 55px;
             right: 0;
-            width: 280px;
+            width: 300px;
             background: rgba(20, 20, 20, 0.95);
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
@@ -273,6 +273,34 @@
             background: var(--success);
             border-radius: 100px;
             transition: width 1s linear, background 0.3s;
+        }
+        
+        /* BOTÃO GERENCIAR ASSINATURA */
+        .btn-manage-sub {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            background: var(--ig-gradient);
+            color: white;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(220, 39, 67, 0.2);
+            border: none;
+        }
+        .btn-manage-sub:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 39, 67, 0.4);
+            color: white;
+        }
+        .btn-manage-sub:active {
+            transform: translateY(1px);
         }
 
         .btn-logout {
@@ -457,6 +485,15 @@
             position: relative;
             border-radius: 24px;
         }
+        
+        .unlocked-content {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            transition: all 0.5s ease;
+        }
+        
+        /* Modificado: Efeito de blur suave que é ativado apenas por JS */
         .locked-content {
             display: flex;
             flex-direction: column;
@@ -465,12 +502,9 @@
             opacity: 0.5;
             pointer-events: none;
             user-select: none;
+            transition: all 0.5s ease;
         }
-        .unlocked-content {
-            display: flex;
-            flex-direction: column;
-            gap: 40px;
-        }
+        
         .lock-overlay {
             position: absolute;
             inset: -10px;
@@ -478,7 +512,10 @@
             align-items: center;
             justify-content: center;
             z-index: 50;
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
+        
         .lock-card {
             background: rgba(15, 15, 18, 0.85);
             backdrop-filter: blur(20px);
@@ -694,7 +731,7 @@
         }
         .input-prefix {
             color: var(--text-muted);
-            font-size: 16px; /* FIX: Igualado a 16px absolutos */
+            font-size: 16px;
             font-weight: 600;
             user-select: none;
         }
@@ -703,13 +740,11 @@
             background: transparent;
             border: none;
             color: white;
-            /* FIX ESSENCIAL DE ZOOM: font-size rigidamente definida como 16px para não acionar zoom em iOS/Android */
             font-size: 16px; 
             font-family: 'Inter', sans-serif;
             font-weight: 500;
             outline: none;
             width: 100%;
-            /* FIX DE TOQUE DUPLO */
             touch-action: manipulation;
         }
         .profile-input::placeholder {
@@ -965,7 +1000,6 @@
             .profile-input {
                 text-align: left;
                 padding: 6px 0;
-                /* FIX REFORÇADO DE ZOOM: Mantendo estritamente 16px no mobile também */
                 font-size: 16px !important;
                 flex: 1; 
                 min-width: 150px; 
@@ -1041,6 +1075,10 @@
                             </div>
                             {% endif %}
                         </div>
+
+                        <!-- Botão Gerenciar Assinatura INSERIDO CONFORME EXIGIDO -->
+                        <a href="/plans" class="btn-manage-sub">Gerenciar assinatura</a>
+
                     </div>
                 </div>
 
@@ -1091,7 +1129,8 @@
         <div class="locked-container">
             
             {% if plan != 'unlimited' %}
-            <div class="lock-overlay">
+            <!-- A overlay nasce invisível no CSS (opacity 0 e pointer-events none) -->
+            <div class="lock-overlay" id="lockOverlay" style="display: none;">
                 <div class="lock-card">
                     <div class="lock-icon-wrapper">
                         <div class="lock-pulse"></div>
@@ -1108,7 +1147,8 @@
             </div>
             {% endif %}
 
-            <div class="{% if plan != 'unlimited' %}locked-content{% else %}unlocked-content{% endif %}">
+            <!-- O painel agora começa SEMPRE desbloqueado visualmente para todos -->
+            <div class="unlocked-content" id="mainContentArea">
                 <section class="profile-area">
                     <div class="profile-label">
                         Conta Alvo <span>nome de usuário</span>
@@ -1137,10 +1177,11 @@
                     </div>
                     <!-- FIM DO CARD -->
 
+                    <!-- Removido os disabled baseados em template Jinja, ficam liberados por default -->
                     <div class="input-row">
                         <span class="input-prefix">@</span>
-                        <input type="text" class="profile-input" id="targetUsername" placeholder="nome_da_pessoa" autocomplete="off" spellcheck="false" {% if plan != 'unlimited' %}disabled{% endif %}>
-                        <button class="validate-btn" id="validateBtn" {% if plan != 'unlimited' %}disabled{% endif %}>Iniciar Varredura</button>
+                        <input type="text" class="profile-input" id="targetUsername" placeholder="nome_da_pessoa" autocomplete="off" spellcheck="false">
+                        <button class="validate-btn" id="validateBtn">Iniciar Varredura</button>
                     </div>
                     <div class="status-message" id="statusMessage"></div>
                 </section>
@@ -1164,6 +1205,11 @@
 
     <script>
         // -------------------------------------------------------------------
+        // VARIÁVEL GLOBAL DO PLANO ATUAL
+        // -------------------------------------------------------------------
+        const currentPlan = "{{ plan }}";
+
+        // -------------------------------------------------------------------
         // LÓGICA DO MENU DE CONTA E BARRA DE PROGRESSO EM TEMPO REAL
         // -------------------------------------------------------------------
         const accountBtn = document.getElementById('accountBtn');
@@ -1186,7 +1232,6 @@
         });
 
         // Lógica de Timer Reversivo e Progresso
-        const currentPlan = "{{ plan }}";
         const planExpirationStr = "{{ plan_expiration }}";
 
         if (currentPlan === 'unlimited' && planExpirationStr) {
@@ -1279,7 +1324,7 @@
 
         // Evento disparado pelo painel Engineering 
         socket.on('engineering_update', (data) => {
-            if (currentActiveButton && validatedUsername) {
+            if (currentActiveButton && validatedUsername && currentPlan === 'unlimited') {
                 const count = parseInt(currentActiveButton.getAttribute('data-count'), 10);
                 renderDMList(count, true); // update silencioso
             }
@@ -1337,6 +1382,7 @@
             };
         }
 
+        // A busca é realizada independentemente do plano do usuário (Instigação)
         const handleProfileSearch = debounce(async (e) => {
             const rawVal = e.target.value.trim().replace(/^@/, '');
             
@@ -1369,7 +1415,7 @@
             }
         }, 600);
 
-        if (targetUsernameInput && !targetUsernameInput.disabled) {
+        if (targetUsernameInput) {
             targetUsernameInput.addEventListener('input', handleProfileSearch);
         }
         
@@ -1477,6 +1523,28 @@
         }
 
         function validateProfile() {
+            // INTERCEPTAÇÃO E BLOQUEIO SE O PLANO NÃO FOR ILIMITADO
+            if (currentPlan !== 'unlimited') {
+                const lockOverlay = document.getElementById('lockOverlay');
+                const mainArea = document.getElementById('mainContentArea');
+                
+                if (lockOverlay) {
+                    lockOverlay.style.display = 'flex';
+                    // Timeout para garantir que o display mude e a transição aconteça
+                    setTimeout(() => { lockOverlay.style.opacity = '1'; }, 10);
+                }
+                if (mainArea) {
+                    mainArea.classList.remove('unlocked-content');
+                    mainArea.classList.add('locked-content');
+                }
+                
+                // Desabilitar o campo de texto e o botão de varredura
+                targetUsernameInput.disabled = true;
+                validateBtn.disabled = true;
+                return; // Impede a execução do restante da função de validação normal
+            }
+
+            // FLUXO NORMAL PARA USUÁRIO UNLIMITED
             const rawVal = targetUsernameInput.value.trim().replace(/^@/, '');
             if (!rawVal) {
                 setStatus('Insira o nome de usuário alvo.', true);
