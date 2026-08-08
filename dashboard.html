@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <!-- CORREÇÃO OBSESSIVA: META VIEWPORT CONFIGURADA PARA BLOQUEIO DEFINITIVO DE ZOOM MANUAL E AUTOMÁTICO NO IPHONE/SAFARI -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>DM Top Monitor | Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,25 +31,34 @@
             box-sizing: border-box;
         }
 
-        /* CORREÇÃO OBSESSIVA: PREVENÇÃO E BLOQUEIO DE SCROLL LATERAL (X) EM QUALQUER DISPOSITIVO, PRINCIPALMENTE IPHONE */
-        html, body {
+        /* CORREÇÃO OBSESSIVA: PREVENÇÃO DE BUG DE TRAVAMENTO NO SCROLL NO IOS E BLOQUEIO DO PULL-TO-REFRESH 
+           1. overscroll-behavior-y: none bloqueia a atualização acidental da página ao arrastar para baixo.
+           2. -webkit-overflow-scrolling: touch restaura a inércia fluida nativa no iPhone.
+           3. Removido propriedades globais de touch-action conflitantes. */
+        html {
             max-width: 100%;
             overflow-x: hidden !important;
             -webkit-text-size-adjust: 100%;
-            touch-action: pan-x pan-y;
-            position: relative;
+            overscroll-behavior-y: none; 
+            background-color: var(--bg-dark);
         }
 
         body {
+            /* CORREÇÃO OBSESSIVA: REMOVIDO "display: flex" do body! 
+               No Safari (iOS), Flexbox no body frequentemente buga o cálculo de altura quando o teclado abre/fecha 
+               ou quando a tela ultrapassa 100vh, causando o erro de "subir pela metade" e trancar. */
+            display: block; 
+            max-width: 100%;
+            overflow-x: hidden !important;
+            overscroll-behavior-y: none;
+            -webkit-overflow-scrolling: touch;
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
             min-height: 100vh;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
             padding: 120px 24px 80px 24px;
             -webkit-font-smoothing: antialiased;
+            position: relative;
         }
 
         h1, h2, h3, h4 {
@@ -422,7 +430,9 @@
             padding: 40px;
             box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
             animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            margin: auto;
+            /* CORREÇÃO OBSESSIVA: Adicionado margin 0 auto para garantir a centralização horizontal 
+               devido à remoção do flexbox no body */
+            margin: 0 auto; 
         }
         
         .top-bar {
@@ -810,7 +820,6 @@
             user-select: none;
         }
 
-        /* CORREÇÃO OBSESSIVA: IMPEDIR ZOOM AUTOMÁTICO NO IPHONE AO FOCAR NO INPUT */
         .profile-input {
             flex: 1;
             background: transparent;
@@ -1055,7 +1064,6 @@
                 width: 16px; height: 16px;
             }
 
-            /* CORREÇÃO OBSESSIVA: POPOVER DA CONTA FIXADO PARA NÃO ESTOURAR AS BORDAS DA TELA NO ANDROID/IOS */
             .account-dropdown {
                 position: fixed;
                 top: 70px;
