@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <!-- [CORREÇÃO] Meta tag obsessivamente ajustada com user-scalable=no e shrink-to-fit=no para travar qualquer tipo de zoom automático ou manual no iOS Safari -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no, interactive-widget=resizes-content">
     <title>DM Top Monitor | Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,30 +23,36 @@
             --glass-blur: blur(30px);
         }
 
-        /* [CORREÇÃO] Regras absolutas no html e body para trancar o eixo X, impossibilitando totalmente o scroll lateral (arraste ou efeito zoom) */
-        html, body {
-            overflow-x: hidden !important;
-            width: 100%;
-            max-width: 100vw;
-            position: relative;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
+        /* [CORREÇÃO] Solução definitiva e minuciosa para destravar o scroll vertical (bug severo comum no iOS Safari/WebViews). 
+           A aplicação separada do overflow em html e body, combinada com overflow-y: auto e -webkit-overflow-scrolling: touch,
+           garante que a rolagem vertical flua com "momentum" perfeitamente livre, mantendo o eixo horizontal rigorosamente blindado. */
+        html {
+            overflow-x: hidden;
+        }
         body {
+            overflow-x: hidden;
+            overflow-y: auto;
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+            
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
-            min-height: 100vh;
             display: flex;
             align-items: flex-start;
             justify-content: center;
             padding: 120px 24px 80px 24px;
             -webkit-font-smoothing: antialiased;
         }
+
         h1, h2, h3, h4 {
             font-family: 'Outfit', sans-serif;
             letter-spacing: -0.02em;
@@ -917,7 +922,6 @@
                 padding: 100px 16px 100px 16px;
             }
             
-            /* [CORREÇÃO] Ajuste obsessivo do Popover da Conta - agora usa position fixed ancorado rigidamente na tela evitando qualquer tipo de quebra ou vazamento lateral no Android e iOS */
             .account-dropdown {
                 position: fixed;
                 top: 75px;
@@ -1005,7 +1009,6 @@
                 padding-left: 8px;
             }
             
-            /* [CORREÇÃO] O flex: 1 1 0% e min-width: 0 proíbem totalmente que placeholders longos estiquem o input causando rolagem lateral. O appearance: none complementa a eliminação do zoom automático do iOS. */
             .profile-input {
                 text-align: left;
                 padding: 6px 0;
@@ -1558,7 +1561,6 @@
             button.addEventListener('click', handleTopButtonClick);
         });
 
-        /* [CORREÇÃO] Evitar focus automático no carregamento em telas móveis para não puxar o zoom/scroll indevido do iOS */
         if (targetUsernameInput && !targetUsernameInput.disabled) {
             if (window.innerWidth > 600) {
                 targetUsernameInput.focus();
