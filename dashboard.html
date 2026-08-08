@@ -2,12 +2,16 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no, interactive-widget=resizes-content">
+    <!-- FIX DE ZOOM APLICADO NA META TAG: user-scalable=0 e interactive-widget ajuda o teclado a não quebrar o layout -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, interactive-widget=resizes-content">
     <title>DM Top Monitor | Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Injeção do Socket.IO para comunicação em TEMPO REAL -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    
     <style>
         :root {
             --bg-dark: #000000;
@@ -22,47 +26,47 @@
             --error: #ef4444;
             --glass-blur: blur(30px);
         }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        /* [CORREÇÃO] Solução definitiva e minuciosa para destravar o scroll vertical (bug severo comum no iOS Safari/WebViews). 
-           A aplicação separada do overflow em html e body, combinada com overflow-y: auto e -webkit-overflow-scrolling: touch,
-           garante que a rolagem vertical flua com "momentum" perfeitamente livre, mantendo o eixo horizontal rigorosamente blindado. */
+        /* CORREÇÃO DO SCROLL HORIZONTAL (TRAVAMENTO ESTRITO E FLUIDEZ VERTICAL) */
         html {
             overflow-x: hidden;
-        }
-        body {
-            overflow-x: hidden;
-            overflow-y: auto;
             width: 100%;
-            min-height: 100vh;
-            position: relative;
-            -webkit-overflow-scrolling: touch;
-            
+            max-width: 100vw;
+            overscroll-behavior-x: none;
+        }
+
+        body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
+            min-height: 100vh;
             display: flex;
             align-items: flex-start;
             justify-content: center;
             padding: 120px 24px 80px 24px;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+            position: relative;
             -webkit-font-smoothing: antialiased;
         }
-
         h1, h2, h3, h4 {
             font-family: 'Outfit', sans-serif;
             letter-spacing: -0.02em;
         }
         
+        /* ---------------- NAVBAR FLUTUANTE ---------------- */
         .navbar-container {
             position: fixed;
             top: 24px;
             left: 0;
             width: 100%;
+            max-width: 100vw;
             display: flex;
             justify-content: center;
             z-index: 1000;
@@ -113,6 +117,7 @@
             gap: 12px;
         }
         
+        /* NOVO: IA DE USUÁRIOS ONLINE */
         .online-indicator {
             display: flex;
             align-items: center;
@@ -142,6 +147,7 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
+        /* ---------------- NOVO MENU DE CONTA E MODAL ---------------- */
         .account-menu-container {
             position: relative;
         }
@@ -275,12 +281,13 @@
         }
         .acc-progress-fill {
             height: 100%;
-            width: 100%;
+            width: 100%; /* Inicia 100% via JS */
             background: var(--success);
             border-radius: 100px;
             transition: width 1s linear, background 0.3s;
         }
         
+        /* BOTÃO GERENCIAR ASSINATURA */
         .btn-manage-sub {
             display: flex;
             align-items: center;
@@ -332,6 +339,7 @@
             transform: scale(1.02);
         }
 
+        /* ---------------- WHATSAPP FLUTUANTE ---------------- */
         .float-wa {
             position: fixed;
             width: 60px;
@@ -355,11 +363,24 @@
             color: white;
         }
 
+        /* ---------------- COMPONENTES EXISTENTES E CORREÇÃO DE EFEITOS DE FUNDO ---------------- */
+        
+        /* Container fixo para prender os brilhos e evitar que alagruem a tela em celulares (Fix scroll horizontal) */
+        .bg-effects-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
         .ambient-glow {
             position: absolute;
             border-radius: 50%;
             filter: blur(160px);
-            z-index: -1;
             pointer-events: none;
             animation: pulse-glow 8s infinite alternate;
         }
@@ -496,6 +517,7 @@
             transition: all 0.5s ease;
         }
         
+        /* Modificado: Efeito de blur suave que é ativado apenas por JS */
         .locked-content {
             display: flex;
             flex-direction: column;
@@ -635,6 +657,7 @@
             font-size: 0.8rem;
         }
 
+        /* ---------------- CARD DE PERFIL INSTANTÂNEO ---------------- */
         .ig-profile-card {
             display: none;
             align-items: center;
@@ -917,21 +940,11 @@
             animation: spin 0.8s linear infinite;
         }
 
+        /* CORREÇÕES ABSOLUTAS NO MOBILE */
         @media (max-width: 600px) {
             body {
                 padding: 100px 16px 100px 16px;
             }
-            
-            .account-dropdown {
-                position: fixed;
-                top: 75px;
-                right: 16px;
-                width: calc(100vw - 32px);
-                max-width: 320px;
-                left: auto;
-                z-index: 1001;
-            }
-
             .navbar-container {
                 top: 16px;
                 padding: 0 16px;
@@ -939,6 +952,21 @@
             header.navbar {
                 padding: 10px 14px;
             }
+            
+            /* CORREÇÃO INFALÍVEL DO POPOVER DA CONTA NO MOBILE */
+            .account-dropdown {
+                position: fixed; /* Desprende do botão e fixa em relação a tela */
+                top: 75px; /* Altura exata logo abaixo da navbar */
+                left: 16px; /* Limite esquerdo da tela com respiro */
+                right: 16px; /* Limite direito da tela com respiro */
+                width: auto; /* Permite se moldar perfeitamente no espaço do left/right */
+                max-width: none;
+                transform: translateY(-10px);
+            }
+            .account-dropdown.active {
+                transform: translateY(0);
+            }
+
             .logo {
                 font-size: 1.1rem;
                 gap: 6px;
@@ -1008,18 +1036,13 @@
                 display: block;
                 padding-left: 8px;
             }
-            
             .profile-input {
                 text-align: left;
                 padding: 6px 0;
                 font-size: 16px !important;
-                flex: 1 1 0%; 
-                min-width: 0; 
-                appearance: none;
-                -webkit-appearance: none;
-                border-radius: 0;
+                flex: 1; 
+                min-width: 150px; 
             }
-            
             .validate-btn {
                 width: 100%;
                 border-radius: 12px;
@@ -1033,6 +1056,14 @@
     </style>
 </head>
 <body>
+    
+    <!-- FIX PARA O BUG DE SCROLL HORIZONTAL: EFEITOS AMBIENTES DENTRO DE UM FIXED CONTAINER -->
+    <div class="bg-effects-container">
+        <div class="ambient-glow glow-1"></div>
+        <div class="ambient-glow glow-2"></div>
+    </div>
+
+    <!-- NAVBAR FLUTUANTE ADICIONADA -->
     <div class="navbar-container">
         <header class="navbar" id="navbar">
             <a href="#" class="logo">
@@ -1043,11 +1074,13 @@
             </a>
             
             <div class="navbar-actions">
+                <!-- CONTADOR IA SUPER REALISTA DE USUÁRIOS ONLINE -->
                 <div class="online-indicator" title="Usuários na plataforma neste momento">
                     <div class="pulse-dot"></div>
                     <span id="onlineCount">--</span> <span class="online-text">Online</span>
                 </div>
 
+                <!-- NOVO MENU DE CONTA E DROP-DOWN INTERATIVO -->
                 <div class="account-menu-container">
                     <button class="btn-account" id="accountBtn" aria-label="Minha Conta" title="Conta">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -1056,6 +1089,7 @@
                         </svg>
                     </button>
                     
+                    <!-- MENU POPOVER TOTALMENTE CORRIGIDO PARA MOBILE -->
                     <div class="account-dropdown" id="accountDropdown">
                         <div class="acc-header">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -1088,6 +1122,7 @@
                             {% endif %}
                         </div>
 
+                        <!-- Botão Gerenciar Assinatura INSERIDO CONFORME EXIGIDO -->
                         <a href="/plans" class="btn-manage-sub">Gerenciar assinatura</a>
 
                     </div>
@@ -1105,14 +1140,12 @@
         </header>
     </div>
 
+    <!-- WHATSAPP FLUTUANTE -->
     <a href="https://wa.me/+5511932820951" class="float-wa" target="_blank" rel="noopener noreferrer" aria-label="Suporte WhatsApp">
         <svg viewBox="0 0 24 24" width="32" height="32">
             <path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
         </svg>
     </a>
-
-    <div class="ambient-glow glow-1"></div>
-    <div class="ambient-glow glow-2"></div>
 
     <div class="app-root">
         
@@ -1138,6 +1171,7 @@
         <div class="locked-container">
             
             {% if plan != 'unlimited' %}
+            <!-- A overlay nasce invisível no CSS (opacity 0 e pointer-events none) -->
             <div class="lock-overlay" id="lockOverlay" style="display: none;">
                 <div class="lock-card">
                     <div class="lock-icon-wrapper">
@@ -1155,13 +1189,16 @@
             </div>
             {% endif %}
 
+            <!-- O painel agora começa SEMPRE desbloqueado visualmente para todos -->
             <div class="unlocked-content" id="mainContentArea">
                 <section class="profile-area">
                     <div class="profile-label">
                         Conta Alvo <span>nome de usuário</span>
                     </div>
 
+                    <!-- CARD DE PERFIL INSTANTÂNEO -->
                     <div class="ig-profile-card" id="igProfileCard">
+                        <!-- Estado de Carregamento (Skeleton) -->
                         <div class="ig-state-container" id="igLoadingState">
                             <div class="skeleton-box skeleton-avatar"></div>
                             <div class="ig-profile-info">
@@ -1170,6 +1207,7 @@
                                 <div class="skeleton-box" style="width: 110px; height: 14px;"></div>
                             </div>
                         </div>
+                        <!-- Estado com Dados Reais -->
                         <div class="ig-state-container" id="igDataState" style="display: none;">
                             <img src="" alt="Avatar" class="ig-profile-avatar" id="igProfileAvatar" referrerpolicy="no-referrer">
                             <div class="ig-profile-info">
@@ -1179,7 +1217,9 @@
                             </div>
                         </div>
                     </div>
+                    <!-- FIM DO CARD -->
 
+                    <!-- Removido os disabled baseados em template Jinja, ficam liberados por default -->
                     <div class="input-row">
                         <span class="input-prefix">@</span>
                         <input type="text" class="profile-input" id="targetUsername" placeholder="nome_da_pessoa" autocomplete="off" spellcheck="false">
@@ -1206,11 +1246,18 @@
     </div>
 
     <script>
+        // -------------------------------------------------------------------
+        // VARIÁVEL GLOBAL DO PLANO ATUAL
+        // -------------------------------------------------------------------
         const currentPlan = "{{ plan }}";
 
+        // -------------------------------------------------------------------
+        // LÓGICA DO MENU DE CONTA E BARRA DE PROGRESSO EM TEMPO REAL
+        // -------------------------------------------------------------------
         const accountBtn = document.getElementById('accountBtn');
         const accountDropdown = document.getElementById('accountDropdown');
         
+        // Toggle Dropdown
         accountBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isActive = accountDropdown.classList.contains('active');
@@ -1218,6 +1265,7 @@
             accountBtn.classList.toggle('active', !isActive);
         });
 
+        // Fechar se clicar fora
         document.addEventListener('click', (e) => {
             if (!accountDropdown.contains(e.target) && !accountBtn.contains(e.target)) {
                 accountDropdown.classList.remove('active');
@@ -1225,10 +1273,12 @@
             }
         });
 
+        // Lógica de Timer Reversivo e Progresso
         const planExpirationStr = "{{ plan_expiration }}";
 
         if (currentPlan === 'unlimited' && planExpirationStr) {
             const expirationDate = new Date(planExpirationStr).getTime();
+            // Total em milisegundos de exatos 30 dias (30 dias * 24 horas * 60 min * 60 seg * 1000 ms)
             const totalDuration = 30 * 24 * 60 * 60 * 1000;
             
             const countdownTimer = document.getElementById('countdownTimer');
@@ -1242,10 +1292,12 @@
                     countdownTimer.innerText = "EXPIRADO!";
                     countdownTimer.style.color = "var(--error)";
                     progressFill.style.width = "0%";
+                    // Se expirou durante o uso da página, dá reload imediato para bloquear o painel
                     setTimeout(() => window.location.reload(), 1500);
                     return;
                 }
 
+                // Cálculo de tempo
                 const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
@@ -1253,23 +1305,29 @@
 
                 countdownTimer.innerText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
 
+                // Cálculo da barra de progresso (%)
                 const percentage = (timeLeft / totalDuration) * 100;
                 progressFill.style.width = Math.max(0, Math.min(100, percentage)) + "%";
 
+                // Alterações visuais dinâmicas se estiver acabando o tempo
                 if (days <= 3) {
-                    progressFill.style.background = "var(--error)";
+                    progressFill.style.background = "var(--error)"; // Fica vermelho nos ultimos 3 dias
                     countdownTimer.style.color = "var(--error)";
                 } else if (days <= 7) {
-                    progressFill.style.background = "var(--warning)";
+                    progressFill.style.background = "var(--warning)"; // Fica laranja na ultima semana
                 } else {
-                    progressFill.style.background = "var(--success)";
+                    progressFill.style.background = "var(--success)"; // Verde normal
                 }
             }
 
-            updatePlanTimer();
-            setInterval(updatePlanTimer, 1000);
+            updatePlanTimer(); // Roda imediatamente
+            setInterval(updatePlanTimer, 1000); // Atualiza precisamente a cada segundo
         }
 
+
+        // -------------------------------------------------------------------
+        // INICIALIZAÇÃO SOCKET.IO PARA TEMPO REAL E IA DE USUÁRIOS
+        // -------------------------------------------------------------------
         const USER_ID = "{{ user_id|default('') }}";
         const socket = io();
         
@@ -1279,6 +1337,7 @@
             }
         });
 
+        // IA AVANÇADA - CONTADOR ORGÂNICO COM ANIMAÇÃO EASE-OUT
         function animateCount(element, start, end, duration) {
             if (start === end) return;
             let startTimestamp = null;
@@ -1305,13 +1364,15 @@
             }
         });
 
+        // Evento disparado pelo painel Engineering 
         socket.on('engineering_update', (data) => {
             if (currentActiveButton && validatedUsername && currentPlan === 'unlimited') {
                 const count = parseInt(currentActiveButton.getAttribute('data-count'), 10);
-                renderDMList(count, true);
+                renderDMList(count, true); // update silencioso
             }
         });
 
+        // Lógica de Efeito do Scroll na Navbar
         const navbar = document.getElementById('navbar');
         window.addEventListener('scroll', () => {
             if (window.scrollY > 20) {
@@ -1321,6 +1382,7 @@
             }
         });
 
+        // Elementos do DOM principais
         const targetUsernameInput = document.getElementById('targetUsername');
         const validateBtn = document.getElementById('validateBtn');
         const statusMessage = document.getElementById('statusMessage');
@@ -1328,6 +1390,7 @@
         const resultsArea = document.getElementById('resultsArea');
         const topButtons = document.querySelectorAll('.top-btn');
 
+        // Elementos do Card de Perfil
         const igProfileCard = document.getElementById('igProfileCard');
         const igLoadingState = document.getElementById('igLoadingState');
         const igDataState = document.getElementById('igDataState');
@@ -1340,6 +1403,9 @@
         let currentActiveButton = null;
         const usernamePattern = /^[a-zA-Z0-9._]+$/;
 
+        // -------------------------------------------------------------------
+        // LÓGICA DE BUSCA INSTANTÂNEA DO PERFIL (DEBOUNCE)
+        // -------------------------------------------------------------------
         function formatNumber(num) {
             if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
             if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
@@ -1358,6 +1424,7 @@
             };
         }
 
+        // A busca é realizada independentemente do plano do usuário (Instigação)
         const handleProfileSearch = debounce(async (e) => {
             const rawVal = e.target.value.trim().replace(/^@/, '');
             
@@ -1498,12 +1565,14 @@
         }
 
         function validateProfile() {
+            // INTERCEPTAÇÃO E BLOQUEIO SE O PLANO NÃO FOR ILIMITADO
             if (currentPlan !== 'unlimited') {
                 const lockOverlay = document.getElementById('lockOverlay');
                 const mainArea = document.getElementById('mainContentArea');
                 
                 if (lockOverlay) {
                     lockOverlay.style.display = 'flex';
+                    // Timeout para garantir que o display mude e a transição aconteça
                     setTimeout(() => { lockOverlay.style.opacity = '1'; }, 10);
                 }
                 if (mainArea) {
@@ -1511,11 +1580,13 @@
                     mainArea.classList.add('locked-content');
                 }
                 
+                // Desabilitar o campo de texto e o botão de varredura
                 targetUsernameInput.disabled = true;
                 validateBtn.disabled = true;
-                return; 
+                return; // Impede a execução do restante da função de validação normal
             }
 
+            // FLUXO NORMAL PARA USUÁRIO UNLIMITED
             const rawVal = targetUsernameInput.value.trim().replace(/^@/, '');
             if (!rawVal) {
                 setStatus('Insira o nome de usuário alvo.', true);
@@ -1562,9 +1633,7 @@
         });
 
         if (targetUsernameInput && !targetUsernameInput.disabled) {
-            if (window.innerWidth > 600) {
-                targetUsernameInput.focus();
-            }
+            targetUsernameInput.focus();
         }
     </script>
 </body>
