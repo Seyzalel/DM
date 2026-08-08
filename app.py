@@ -60,17 +60,20 @@ profile_cache = {}
 # Inicializa ou carrega o estado da simulação no MongoDB
 sim_doc = simulation_db.find_one({"_id": "sim_state"})
 if not sim_doc:
+    initial_count = int((66.0 + 312.0) / 2)
     sim_doc = {
         "_id": "sim_state",
         "start_date": datetime.utcnow(),
         "last_updated": datetime.utcnow(),
         "base_min": 66.0,
-        "base_max": 312.0
+        "base_max": 312.0,
+        "last_online_count": initial_count # Salva o número inicial
     }
     simulation_db.insert_one(sim_doc)
 
 sim_state = sim_doc
-current_online_users = int((sim_doc['base_min'] + sim_doc['base_max']) / 2)
+# Em caso de restart/redeploy, recupera o ÚLTIMO valor salvo no banco de dados
+current_online_users = sim_doc.get("last_online_count", int((sim_doc['base_min'] + sim_doc['base_max']) / 2))
 
 def update_daily_growth():
     global sim_state
@@ -150,6 +153,13 @@ def simulation_background_task():
             
         if current_online_users < 8:
             current_online_users = random.randint(8, 20)
+            
+        # GRAVAÇÃO EM TEMPO REAL NO BANCO DE DADOS
+        # Garante que, caso haja um deploy, o app volte exatamente desse número e não de horas atrás.
+        simulation_db.update_one(
+            {"_id": "sim_state"},
+            {"$set": {"last_online_count": current_online_users}}
+        )
             
         socketio.emit('online_users_update', {'count': current_online_users})
         
